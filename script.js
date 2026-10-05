@@ -29,9 +29,15 @@ async function doLogin() {
     let response = await fetch(`${SHEETDB_URL}/?sheet=DataKaryawan`);
     let karyawanList = await response.json();
 
+    console.log("Data Karyawan dari Sheet:", karyawanList); // Cek console browser (F12) jika masih gagal
+
     let foundUser = null;
     if (Array.isArray(karyawanList)) {
-      foundUser = karyawanList.find(k => k.username === user && k.password === pass);
+      // Pencocokan data dengan mengabaikan perbedaan huruf kecil/besar (case-insensitive)
+      foundUser = karyawanList.find(k => 
+        k.username && k.username.toString().trim().toLowerCase() === user.toLowerCase() && 
+        k.password && k.password.toString().trim() === pass
+      );
     }
 
     btn.innerText = "Masuk Sistem";
@@ -58,13 +64,13 @@ async function doLogin() {
         }
       }, 1000);
     } else {
-      err.innerText = "Username atau password salah!";
+      err.innerText = "Username atau password salah / Data sheet belum terbaca!";
       err.style.display = "block";
     }
   } catch (e) {
     btn.innerText = "Masuk Sistem";
     btn.disabled = false;
-    err.innerText = "Gagal terhubung ke database sheet!";
+    err.innerText = "Gagal terhubung ke API SheetDB: " + e.message;
     err.style.display = "block";
   }
 }
@@ -99,7 +105,7 @@ async function loadKasirData() {
       return;
     }
     products.forEach((p, index) => {
-      tbody.innerHTML += `<tr><td><strong>${p.nama}</strong></td><td>Rp ${parseFloat(p.harga).toLocaleString()}</td><td>${p.stok}</td><td><button class="btn-secondary" style="padding:6px 10px;" onclick="addToCart(${index})">Tambah</button></td></tr>`;
+      tbody.innerHTML += `<tr><td><strong>${p.nama}</strong></td><td>Rp ${parseFloat(p.harga || 0).toLocaleString()}</td><td>${p.stok || 0}</td><td><button class="btn-secondary" style="padding:6px 10px;" onclick="addToCart(${index})">Tambah</button></td></tr>`;
     });
   } catch (e) {
     tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:red;'>Gagal memuat produk.</td></tr>";
@@ -200,14 +206,12 @@ async function processCheckout() {
   };
 
   try {
-    // Kirim transaksi ke tab 'Transaksi' di SheetDB
     await fetch(`${SHEETDB_URL}/?sheet=Transaksi`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data: [newTrx] })
     });
 
-    // Tampilkan Struk Berhasil
     document.getElementById("successTrxId").innerText = "No. Trx: " + trxId;
     document.getElementById("resQueueNo").innerText = queueNo;
     const resCart = document.getElementById("resCartItems");
@@ -276,15 +280,13 @@ async function loadAdminDashboard() {
 
     document.getElementById("dashTrx").innerText = totalTrx;
     document.getElementById("dashOmset").innerText = "Rp " + totalOmset.toLocaleString();
-    document.getElementById("dashItem").innerText = totalTrx * 2; // Estimasi
+    document.getElementById("dashItem").innerText = totalTrx * 2;
     document.getElementById("dashBasket").innerText = totalTrx > 0 ? "2.0" : "0";
     document.getElementById("dashAvg").innerText = totalTrx > 0 ? "Rp " + Math.round(totalOmset / totalTrx).toLocaleString() : "Rp 0";
 
-    // Stok & Log
     document.getElementById("adminStockTbody").innerHTML = "<tr><td>Kopi Susu Gula Aren</td><td><strong>50</strong></td></tr>";
     document.getElementById("adminLogTbody").innerHTML = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${userProfile ? userProfile.nama : 'Admin'}</td><td>Login Berhasil</td></tr>`;
 
-    // Grafik
     const ctx = document.getElementById('omzetChart').getContext('2d');
     if (chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, {
