@@ -1,26 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <base target="_top">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LOKASI KOPI - Sistem Kasir & Barista</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <?!= include('Style'); ?> <!-- Jika pakai Vercel murni, tag ini bisa diganti link <link rel="stylesheet" href="Style.css"> -->
-  <link rel="stylesheet" href="Style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <!-- NAVBAR -->
   <div id="navbar" class="navbar" style="display: none;">
-    <div class="nav-brand">☕ LOKASI KOPI</div>
+    <div class="nav-brand">☕ LOKASI KOPI KASSA</div>
     <div class="nav-menu" id="adminNav" style="display: none;">
       <button onclick="showPage('admin-page')">Dashboard Admin</button>
       <button onclick="showPage('kasir-page')">Akses Kasir</button>
       <button onclick="showPage('barista-page')">Akses Barista</button>
     </div>
     <div class="nav-user">
-      <span id="userInfo">Nama (Role)</span>
+      <span id="userInfo" style="margin-right: 12px; font-size: 0.9em; font-weight: 500;">Role</span>
       <button class="btn-danger" onclick="logout()">Logout</button>
     </div>
   </div>
@@ -28,12 +26,12 @@
   <!-- HALAMAN LOGIN -->
   <div id="login-page" class="page-container" style="display: flex;">
     <div class="login-card">
-      <div style="text-align:center; font-size: 3em; margin-bottom: 10px;">🔐</div>
-      <h2 style="text-align: center; border: none; margin-bottom: 20px;">Sistem Kasir Terpadu</h2>
+      <div style="text-align:center; font-size: 2.8em; margin-bottom: 5px;">☕</div>
+      <h2 style="text-align: center; border: none; margin-bottom: 20px; color: var(--primary-navy);">Sistem Kasir Terpadu</h2>
       <div class="modal-row"><label>Username</label><input type="text" id="loginUser" placeholder="Masukkan username"></div>
       <div class="modal-row"><label>Password</label><input type="password" id="loginPass" placeholder="Masukkan password"></div>
-      <button class="btn-primary" onclick="doLogin()" id="btnLogin" style="margin-top: 20px;">Masuk Sistem</button>
-      <p id="loginError" style="color: red; text-align: center; display: none; margin-top: 10px;"></p>
+      <button class="btn-primary" onclick="doLogin()" id="btnLogin" style="margin-top: 10px;">Masuk Sistem</button>
+      <p id="loginError" style="color: var(--danger); text-align: center; display: none; margin-top: 12px; font-size: 0.9em; font-weight: 500;"></p>
     </div>
   </div>
 
@@ -41,8 +39,8 @@
   <div id="loginSuccessModal" class="modal">
     <div class="modal-content text-center" style="width: 320px;">
       <div class="success-icon">✓</div>
-      <h3 style="color: #6f4e37; margin-bottom: 5px;">Login Berhasil!</h3>
-      <p id="loginWelcomeText" style="color: #7d716a; font-size: 0.9em; margin-top: 0;">Memuat sistem...</p>
+      <h3 style="color: var(--primary-navy); margin-bottom: 5px;">Login Berhasil!</h3>
+      <p id="loginWelcomeText" style="color: var(--text-muted); font-size: 0.9em;">Memuat sistem...</p>
     </div>
   </div>
 
@@ -50,7 +48,7 @@
   <div id="admin-page" class="page-container" style="display: none; flex-direction: column; gap: 20px;">
     <div class="card" style="width: 100%;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>👋 Dashboard Analitik</h2>
+        <h2>📊 Dashboard Analitik & Statistik</h2>
         <button class="btn-secondary" onclick="loadAdminDashboard()">🔄 Segarkan Data</button>
       </div>
       <div class="dashboard-cards">
@@ -62,19 +60,19 @@
       </div>
     </div>
     <div class="card" style="width: 100%;">
-      <h2 style="border:none; margin-bottom:0;">📈 Grafik Omset & Qty</h2>
-      <canvas id="omzetChart" height="60"></canvas>
+      <h2 style="border:none; margin-bottom:0;">📈 Grafik Omset & Penjualan</h2>
+      <canvas id="omzetChart" height="55"></canvas>
     </div>
     <div style="display: flex; gap: 20px; width: 100%; align-items: flex-start;">
       <div class="card" style="flex: 1;">
-        <h2>📦 Stok Produk</h2>
+        <h2>📦 Sisa Stok Produk</h2>
         <table id="adminStockTable">
           <thead><tr><th>Menu</th><th>Stok</th></tr></thead>
           <tbody id="adminStockTbody"><tr><td colspan="2" style="text-align:center;">Memuat...</td></tr></tbody>
         </table>
       </div>
       <div class="card" style="flex: 1.5;">
-        <h2>📜 Log Aktivitas</h2>
+        <h2>📜 Log Aktivitas Sistem</h2>
         <table style="font-size: 0.85em;">
           <thead><tr><th>Waktu</th><th>User</th><th>Aksi</th></tr></thead>
           <tbody id="adminLogTbody"><tr><td colspan="3" style="text-align:center;">Memuat...</td></tr></tbody>
@@ -87,11 +85,11 @@
   <div id="barista-page" class="page-container" style="display: none; align-items: flex-start;">
     <div class="card" style="width: 100%;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>📋 Antrean Pesanan Masuk</h2>
-        <button class="btn-secondary" onclick="loadBaristaOrders()">🔄 Segarkan</button>
+        <h2>📋 Antrean Pesanan Barista</h2>
+        <button class="btn-secondary" onclick="loadBaristaOrders()">🔄 Segarkan Antrean</button>
       </div>
       <table id="baristaTable">
-        <thead><tr><th>Jam</th><th>No. Trx</th><th>Pesanan (Qty)</th><th>Status</th><th>Aksi</th></tr></thead>
+        <thead><tr><th>Jam</th><th>No. Trx</th><th>Daftar Pesanan (Qty)</th><th>Status</th><th>Aksi Tahapan</th></tr></thead>
         <tbody id="baristaTbody"></tbody>
       </table>
     </div>
@@ -99,13 +97,13 @@
 
   <!-- MODAL KONFIRMASI BARISTA -->
   <div id="baristaConfirmModal" class="modal">
-    <div class="modal-content text-center" style="width: 350px;">
-      <div style="font-size: 3em; margin-bottom: 5px;">⚠️</div>
-      <h3 style="color: #6f4e37; margin-bottom: 10px;">Konfirmasi</h3>
-      <p id="baristaConfirmText" style="color: #7d716a; font-size: 0.95em; margin-bottom: 20px;">Ubah status pesanan?</p>
+    <div class="modal-content text-center" style="width: 360px;">
+      <div style="font-size: 2.5em; margin-bottom: 5px;">⚠️</div>
+      <h3 style="color: var(--primary-navy); margin-bottom: 5px;">Konfirmasi Status</h3>
+      <p id="baristaConfirmText" style="color: var(--text-muted); font-size: 0.95em; margin-bottom: 15px;">Ubah status pesanan?</p>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeBaristaModal()">Batal</button>
-        <button class="btn-primary" id="btnConfirmBaristaYes" style="margin-top:0;">Ya</button>
+        <button class="btn-primary" id="btnConfirmBaristaYes" style="margin-top:0;">Ya, Lanjutkan</button>
       </div>
     </div>
   </div>
@@ -113,7 +111,7 @@
   <!-- HALAMAN KASIR -->
   <div id="kasir-page" class="page-container" style="display: none;">
     <div class="card product-section" style="flex:2;">
-      <h2>☕ Menu Produk</h2>
+      <h2>☕ Katalog Menu Produk</h2>
       <table id="productTable">
         <thead><tr><th>Menu</th><th>Harga</th><th>Stok</th><th>Aksi</th></tr></thead>
         <tbody></tbody>
@@ -121,7 +119,7 @@
     </div>
     <div class="card cart-section" style="flex:1;">
       <div>
-        <h2>🛒 Keranjang</h2>
+        <h2>🛒 Keranjang Belanja</h2>
         <table id="cartTable">
           <thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th></tr></thead>
           <tbody></tbody>
@@ -129,7 +127,7 @@
       </div>
       <div>
         <div class="total-box" id="totalText">Total: Rp 0</div>
-        <button class="btn-primary" onclick="openCheckoutModal()">Bayar Pesanan</button>
+        <button class="btn-primary" onclick="openCheckoutModal()" style="padding: 14px; font-size: 1.05em;">Bayar Pesanan</button>
       </div>
     </div>
   </div>
@@ -137,9 +135,9 @@
   <!-- MODAL PEMBAYARAN -->
   <div id="paymentModal" class="modal">
     <div class="modal-content">
-      <h3>Konfirmasi Pembayaran</h3>
-      <div class="modal-row"><span>Total Belanja</span><strong id="modalTotal">Rp 0</strong></div>
-      <div class="modal-row"><label>Uang Tunai</label><input type="number" id="cashInput" oninput="calculateChange()"></div>
+      <h3 style="color: var(--primary-navy);">Konfirmasi Pembayaran</h3>
+      <div class="modal-row" style="margin-bottom: 8px;"><span>Total Belanja</span><strong id="modalTotal" style="font-size: 1.2em; color: var(--primary-navy);">Rp 0</strong></div>
+      <div class="modal-row"><label>Uang Tunai Konsumen</label><input type="number" id="cashInput" placeholder="Masukkan nominal uang" oninput="calculateChange()"></div>
       <div class="quick-cash-container">
         <button type="button" class="btn-cash" onclick="addCash(500)">500</button>
         <button type="button" class="btn-cash" onclick="addCash(1000)">1rb</button>
@@ -150,41 +148,41 @@
         <button type="button" class="btn-cash" onclick="addCash(50000)">50rb</button>
         <button type="button" class="btn-cash" onclick="addCash(100000)">100rb</button>
       </div>
-      <button type="button" class="btn-cash btn-reset" style="width:100%; margin-bottom:15px;" onclick="resetCash()">Reset</button>
-      <div class="modal-row"><span>Kembalian</span><strong id="modalChange" class="change-text">Rp 0</strong></div>
-      <div class="modal-actions">
+      <button type="button" class="btn-cash btn-reset" style="width:100%; margin-top: 4px;" onclick="resetCash()">Reset Nominal</button>
+      <div class="modal-row" style="margin-top: 5px;"><span>Kembalian</span><strong id="modalChange" style="font-size: 1.2em; color: var(--success);">Rp 0</strong></div>
+      <div class="modal-actions" style="margin-top: 5px;">
         <button class="btn-secondary" onclick="closeCheckoutModal()">Batal</button>
         <button class="btn-primary" id="btnProcess" onclick="processCheckout()" disabled>Selesaikan</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL STRUK -->
+  <!-- MODAL STRUK BERHASIL -->
   <div id="successModal" class="modal">
-    <div class="modal-content text-center">
+    <div class="modal-content text-center" style="width: 380px;">
       <div class="success-icon">✓</div>
-      <h3>Transaksi Berhasil!</h3>
-      <p id="successTrxId" class="trx-id"></p>
-      <div class="receipt-queue-box">
-        <span style="font-size: 10px; text-transform: uppercase;">Nomor Antrian</span>
-        <h2 id="resQueueNo" style="margin:2px 0; font-size: 22px; color: #6f4e37;">A-000</h2>
+      <h3 style="color: var(--primary-navy);">Transaksi Berhasil!</h3>
+      <p id="successTrxId" style="color: var(--text-muted); font-size: 0.85em; font-weight: 600;"></p>
+      <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed var(--border-color);">
+        <span style="font-size: 0.75em; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Nomor Antrian</span>
+        <h2 id="resQueueNo" style="margin:4px 0 0 0; font-size: 26px; color: var(--primary-navy);">A-000</h2>
       </div>
-      <table class="receipt-table">
+      <table style="font-size: 0.85em;">
         <thead><tr><th>Item</th><th>Qty</th><th style="text-align: right;">Subtotal</th></tr></thead>
         <tbody id="resCartItems"></tbody>
       </table>
-      <div class="receipt-summary-aesthetic">
-        <div class="sum-row"><span>Total</span> <strong id="resTotal"></strong></div>
-        <div class="sum-row"><span>Tunai</span> <span id="resCash"></span></div>
-        <div class="sum-row change-row"><span>Kembalian</span> <strong id="resChange"></strong></div>
+      <div style="text-align: left; font-size: 0.9em; background: #f8fafc; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; justify-content: space-between;"><span>Total:</span> <strong id="resTotal"></strong></div>
+        <div style="display: flex; justify-content: space-between;"><span>Tunai:</span> <span id="resCash"></span></div>
+        <div style="display: flex; justify-content: space-between; color: var(--success);"><span>Kembalian:</span> <strong id="resChange"></strong></div>
       </div>
-      <div class="modal-actions" style="flex-direction: column; gap: 8px;">
-        <button class="btn-primary" onclick="window.print()" style="background: #2e7d32; margin-top:0;">🖨 Cetak Struk</button>
+      <div class="modal-actions" style="flex-direction: column; gap: 8px; margin-top: 5px;">
+        <button class="btn-primary" onclick="window.print()" style="background: var(--success); color: white; margin-top:0;">🖨 Cetak Struk</button>
         <button class="btn-secondary" onclick="closeSuccessModal()" style="width:100%; padding:10px;">Transaksi Baru</button>
       </div>
     </div>
   </div>
 
-  <script src="Script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
