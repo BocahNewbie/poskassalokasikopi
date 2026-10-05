@@ -1,5 +1,5 @@
 // Endpoint SheetDB kamu (POS KASSA)
-const SHEETDB_URL = "https://sheetdb.io/api/v1/gqp6zro72ut00";
+const SHEETDB_URL = "https://sheetdb.io/api/v1/1j6gs91k72kcy";
 
 let userProfile = null;
 let chartInstance = null;
