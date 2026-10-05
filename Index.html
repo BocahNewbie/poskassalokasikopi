@@ -48,8 +48,8 @@
   <div id="admin-page" class="page-container" style="display: none; flex-direction: column; gap: 20px;">
     <div class="card" style="width: 100%;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-         <h2>👋 Dashboard Analitik</h2>
-         <button class="btn-secondary" onclick="loadAdminDashboard()">🔄 Segarkan Data Admin</button>
+        <h2>👋 Dashboard Analitik</h2>
+        <button class="btn-secondary" onclick="loadAdminDashboard()">🔄 Segarkan Data Admin</button>
       </div>
       <div class="dashboard-cards">
         <div class="dash-card dash-trx"><h4>Total Transaksi</h4><h2 id="dashTrx">0</h2></div>
@@ -59,12 +59,10 @@
         <div class="dash-card dash-avg"><h4>Rata-rata Belanja</h4><h2 id="dashAvg">Rp 0</h2></div>
       </div>
     </div>
-
     <div class="card" style="width: 100%;">
       <h2 style="border:none; margin-bottom:0;">📈 Grafik Omset & Qty (7 Hari Terakhir)</h2>
       <canvas id="omzetChart" height="60"></canvas>
     </div>
-
     <div style="display: flex; gap: 20px; width: 100%; align-items: flex-start;">
       <div class="card" style="flex: 1;">
         <h2>📦 Sisa Stok Produk</h2>
@@ -97,7 +95,7 @@
     </div>
   </div>
 
-  <!-- MODAL POPUP KONFIRMASI BARISTA (2x Konfirmasi Ya/Belum) -->
+  <!-- MODAL POPUP KONFIRMASI BARISTA -->
   <div id="baristaConfirmModal" class="modal">
     <div class="modal-content text-center" style="width: 350px;">
       <div style="font-size: 3em; margin-bottom: 5px;">⚠️</div>
@@ -129,6 +127,7 @@
       </div>
       <div>
         <div class="total-box" id="totalText">Total: Rp 0</div>
+        <!-- Diperbaiki dari onclick="openCheckou..." menjadi fungsi utuh -->
         <button class="btn-primary" onclick="openCheckoutModal()">Bayar Pesanan</button>
       </div>
     </div>
@@ -160,13 +159,12 @@
     </div>
   </div>
 
-  <!-- Modal Struk Berhasil dengan Desain Estetik Baru -->
+  <!-- Modal Struk Berhasil -->
   <div id="successModal" class="modal">
     <div class="modal-content text-center">
       <div class="success-icon">✓</div>
       <h3>Transaksi Berhasil!</h3>
       <p id="successTrxId" class="trx-id"></p>
-      
       <div id="printArea" class="receipt-details">
         <div class="receipt-header" style="display:none; text-align:center; margin-bottom:6px;">
           <h4>☕ LOKASI KOPI</h4>
@@ -176,20 +174,16 @@
           <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Nomor Antrian</span>
           <h2 id="resQueueNo" style="margin:2px 0; font-size: 22px; color: #6f4e37;">A-000</h2>
         </div>
-        
         <table class="receipt-table">
           <thead><tr><th>Item</th><th>Qty</th><th style="text-align: right;">Subtotal</th></tr></thead>
           <tbody id="resCartItems"></tbody>
         </table>
-
-        <!-- Ringkasan Estetik Baru (Rata Kanan & Elegan) -->
         <div class="receipt-summary-aesthetic">
           <div class="sum-row"><span>Total Belanja</span> <strong id="resTotal"></strong></div>
           <div class="sum-row"><span>Tunai</span> <span id="resCash"></span></div>
           <div class="sum-row change-row"><span>Kembalian</span> <strong id="resChange" class="change-highlight"></strong></div>
         </div>
       </div>
-      
       <div class="modal-actions" style="flex-direction: column; gap: 8px;">
         <button class="btn-primary" onclick="printReceipt()" style="background: #2e7d32; margin-top:0;">🖨 Cetak Struk</button>
         <button class="btn-secondary" onclick="closeSuccessModal()" style="width:100%; padding:10px;">Transaksi Baru</button>
