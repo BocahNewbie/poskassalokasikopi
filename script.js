@@ -30,10 +30,11 @@ async function doLogin() {
     
     let foundUser = null;
     if (Array.isArray(karyawanList)) {
-      foundUser = karyawanList.find(k => 
-        k.username && k.username.toString().trim().toLowerCase() === user.toLowerCase() && 
-        k.password && k.password.toString().trim() === pass
-      );
+      foundUser = karyawanList.find(k => {
+        let u = k.username || k.Username || "";
+        let p = k.password || k.Password || "";
+        return u.toString().trim().toLowerCase() === user.toLowerCase() && p.toString().trim() === pass;
+      });
     }
 
     btn.innerText = "Masuk Sistem";
@@ -46,7 +47,6 @@ async function doLogin() {
         role: foundUser.role || foundUser.Role || "Kasir"
       };
 
-      // Catat log login ke tab LogAktivitas
       await catatLogAktivitas(userProfile.nama, "Login Berhasil ke Sistem");
 
       document.getElementById("loginWelcomeText").innerText = `Halo, ${userProfile.nama} (${userProfile.role}) 👋`;
@@ -126,7 +126,11 @@ async function loadKasirData() {
       return;
     }
     products.forEach((p, index) => {
-      tbody.innerHTML += `<tr><td><strong>${p.nama}</strong></td><td>Rp ${parseFloat(p.harga || 0).toLocaleString()}</td><td>${p.stok || 0}</td><td><button class="btn-secondary" style="padding:6px 10px;" onclick="addToCart(${index})">Tambah</button></td></tr>`;
+      let namaMenu = p.nama || p.Nama || p.NAMA || "Menu Tanpa Nama";
+      let hargaMenu = parseFloat(p.harga || p.Harga || 0);
+      let stokMenu = parseInt(p.stok || p.Stok || 0);
+
+      tbody.innerHTML += `<tr><td><strong>${namaMenu}</strong></td><td>Rp ${hargaMenu.toLocaleString()}</td><td>${stokMenu}</td><td><button class="btn-secondary" style="padding:6px 10px;" onclick="addToCart(${index})">Tambah</button></td></tr>`;
     });
   } catch (e) {
     tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:red;'>Gagal memuat produk dari sheet.</td></tr>";
@@ -135,16 +139,20 @@ async function loadKasirData() {
 
 function addToCart(index) {
   const product = products[index];
-  if (!product || parseInt(product.stok) <= 0) {
+  let namaMenu = product.nama || product.Nama || product.NAMA;
+  let hargaMenu = parseFloat(product.harga || product.Harga || 0);
+  let stokMenu = parseInt(product.stok || product.Stok || 0);
+
+  if (!product || stokMenu <= 0) {
     alert("Stok produk habis!");
     return;
   }
-  let item = cart.find(i => i.nama === product.nama);
+  let item = cart.find(i => i.nama === namaMenu);
   if (item) {
-    if (item.qty < parseInt(product.stok)) item.qty++;
+    if (item.qty < stokMenu) item.qty++;
     else alert("Stok tidak mencukupi!");
   } else {
-    cart.push({ nama: product.nama, harga: parseFloat(product.harga), qty: 1 });
+    cart.push({ nama: namaMenu, harga: hargaMenu, qty: 1 });
   }
   renderCart();
 }
@@ -214,6 +222,7 @@ async function processCheckout() {
   let jamStr = new Date().toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' });
   let itemsFormatted = lastCart.map(i => `${i.nama} (${i.qty}x)`).join(", ");
 
+  // Menggunakan key idTrx agar masuk ke kolom sheet Transaksi dengan benar
   let newTrx = {
     idTrx: trxId,
     nomorAntrian: queueNo,
@@ -227,14 +236,12 @@ async function processCheckout() {
   };
 
   try {
-    // 1. Kirim transaksi ke tab 'Transaksi'
     await fetch(`${SHEETDB_URL}/?sheet=Transaksi`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data: [newTrx] })
     });
 
-    // 2. Catat log aktivitas transaksi berhasil
     await catatLogAktivitas(userProfile ? userProfile.nama : "Kasir", `Melakukan Transaksi #${trxId}`);
 
     document.getElementById("successTrxId").innerText = "No. Trx: " + trxId;
@@ -261,7 +268,7 @@ function closeSuccessModal() {
   document.getElementById("successModal").style.display = "none";
 }
 
-// ======== BARISTA - Membaca Tab Transaksi ========
+// ======== BARISTA - Membaca & Mengubah Status Tab Transaksi ========
 async function loadBaristaOrders() {
   const tbody = document.getElementById("baristaTbody");
   tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Memuat antrean...</td></tr>";
@@ -275,20 +282,52 @@ async function loadBaristaOrders() {
     }
 
     orders.reverse().forEach((p) => {
-      let color = p.status === "Menunggu" ? "#f39c12" : (p.status === "Diterima" ? "#3498db" : "#28a745");
+      let currentTrxId = p.idTrx || p.idtrx || p.IDTRX || "-";
+      let currentStatus = p.status || p.Status || "Menunggu";
+      let color = currentStatus === "Menunggu" ? "#f39c12" : (currentStatus === "Diterima" ? "#3498db" : "#28a745");
+      
+      let nextStatus = currentStatus === "Menunggu" ? "Diterima" : (currentStatus === "Diterima" ? "Diproses" : "Selesai");
+      let btnHtml = currentStatus !== "Selesai" 
+        ? `<button class="btn-secondary" style="padding:6px 12px; font-size:0.85em;" onclick="updateBaristaStatus('${currentTrxId}', '${nextStatus}')">Ubah ke ${nextStatus}</button>`
+        : `<span style="color:#28a745; font-weight:bold;">Selesai ✓</span>`;
+
       tbody.innerHTML += `
         <tr>
           <td>${p.jam || '-'}</td>
-          <td><strong>${p.idTrx}</strong></td>
-          <td>${p.items}</td>
-          <td><strong style="color:${color};">${p.status}</strong></td>
-          <td><button class="btn-secondary" onclick="alert('Status diperbarui')">Ubah Status</button></td>
+          <td><strong>${currentTrxId}</strong></td>
+          <td>${p.items || '-'}</td>
+          <td><strong style="color:${color};">${currentStatus}</strong></td>
+          <td>${btnHtml}</td>
         </tr>
       `;
     });
   } catch (e) {
     tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:red;'>Gagal memuat antrean.</td></tr>";
   }
+}
+
+function updateBaristaStatus(trxId, statusBaru) {
+  const modal = document.getElementById("baristaConfirmModal");
+  const textEl = document.getElementById("baristaConfirmText");
+  const yesBtn = document.getElementById("btnConfirmBaristaYes");
+
+  textEl.innerText = `Ubah status transaksi [${trxId}] menjadi "${statusBaru}"?`;
+  modal.style.display = "flex";
+
+  yesBtn.onclick = async function() {
+    modal.style.display = "none";
+    try {
+      // Menggunakan SheetDB PATCH untuk memperbarui status berdasarkan kolom idTrx
+      await fetch(`${SHEETDB_URL}/idTrx/${trxId}?sheet=Transaksi`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: { status: statusBaru } })
+      });
+      loadBaristaOrders();
+    } catch (e) {
+      alert("Gagal memperbarui status: " + e.message);
+    }
+  };
 }
 
 function closeBaristaModal() {
@@ -309,7 +348,7 @@ async function loadAdminDashboard() {
     let logList = await resLog.json();
 
     let totalTrx = Array.isArray(orders) ? orders.length : 0;
-    let totalOmset = Array.isArray(orders) ? orders.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0) : 0;
+    let totalOmset = Array.isArray(orders) ? orders.reduce((acc, curr) => acc + (parseFloat(curr.total || 0), 0), 0) : 0;
 
     document.getElementById("dashTrx").innerText = totalTrx;
     document.getElementById("dashOmset").innerText = "Rp " + totalOmset.toLocaleString();
@@ -317,18 +356,18 @@ async function loadAdminDashboard() {
     document.getElementById("dashBasket").innerText = totalTrx > 0 ? "2.0" : "0";
     document.getElementById("dashAvg").innerText = totalTrx > 0 ? "Rp " + Math.round(totalOmset / totalTrx).toLocaleString() : "Rp 0";
 
-    // 1. Tampilkan Sisa Stok Produk dari tab 'Produk'
     const stockTbody = document.getElementById("adminStockTbody");
     stockTbody.innerHTML = "";
     if (Array.isArray(prodList) && prodList.length > 0) {
       prodList.forEach(p => {
-        stockTbody.innerHTML += `<tr><td>${p.nama}</td><td><strong>${p.stok || 0}</strong></td></tr>`;
+        let namaMenu = p.nama || p.Nama || p.NAMA || "Menu";
+        let stokMenu = p.stok || p.Stok || 0;
+        stockTbody.innerHTML += `<tr><td>${namaMenu}</td><td><strong>${stokMenu}</strong></td></tr>`;
       });
     } else {
       stockTbody.innerHTML = "<tr><td colspan='2'>Belum ada data produk.</td></tr>";
     }
 
-    // 2. Tampilkan Log Aktivitas dari tab 'LogAktivitas'
     const logTbody = document.getElementById("adminLogTbody");
     logTbody.innerHTML = "";
     if (Array.isArray(logList) && logList.length > 0) {
@@ -339,7 +378,6 @@ async function loadAdminDashboard() {
       logTbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Belum ada log aktivitas.</td></tr>";
     }
 
-    // Grafik Chart.js
     const ctx = document.getElementById('omzetChart').getContext('2d');
     if (chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, {
