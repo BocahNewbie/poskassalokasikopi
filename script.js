@@ -25,15 +25,11 @@ async function doLogin() {
   err.style.display = "none";
 
   try {
-    // Mengambil data dari sheet DataKaryawan via SheetDB
     let response = await fetch(`${SHEETDB_URL}/?sheet=DataKaryawan`);
     let karyawanList = await response.json();
-
-    console.log("Data Karyawan dari Sheet:", karyawanList); // Cek console browser (F12) jika masih gagal
-
+    
     let foundUser = null;
     if (Array.isArray(karyawanList)) {
-      // Pencocokan data dengan mengabaikan perbedaan huruf kecil/besar (case-insensitive)
       foundUser = karyawanList.find(k => 
         k.username && k.username.toString().trim().toLowerCase() === user.toLowerCase() && 
         k.password && k.password.toString().trim() === pass
@@ -44,7 +40,15 @@ async function doLogin() {
     btn.disabled = false;
 
     if (foundUser) {
-      userProfile = foundUser;
+      userProfile = {
+        username: foundUser.username || foundUser.Username,
+        nama: foundUser.nama || foundUser.Nama || "Karyawan",
+        role: foundUser.role || foundUser.Role || "Kasir"
+      };
+
+      // Catat log login ke tab LogAktivitas
+      await catatLogAktivitas(userProfile.nama, "Login Berhasil ke Sistem");
+
       document.getElementById("loginWelcomeText").innerText = `Halo, ${userProfile.nama} (${userProfile.role}) 👋`;
       document.getElementById("loginSuccessModal").style.display = "flex";
 
@@ -54,28 +58,31 @@ async function doLogin() {
         document.getElementById("login-page").style.display = "none";
         document.getElementById("navbar").style.display = "flex";
 
-        if (userProfile.role === "Admin") {
+        if (userProfile.role.toLowerCase() === "admin") {
           document.getElementById("adminNav").style.display = "flex";
           showPage("admin-page");
-        } else if (userProfile.role === "Kasir") {
+        } else if (userProfile.role.toLowerCase() === "kasir") {
           showPage("kasir-page");
-        } else if (userProfile.role === "Barista") {
+        } else if (userProfile.role.toLowerCase() === "barista") {
           showPage("barista-page");
         }
       }, 1000);
     } else {
-      err.innerText = "Username atau password salah / Data sheet belum terbaca!";
+      err.innerText = "Username atau password salah di database sheet!";
       err.style.display = "block";
     }
   } catch (e) {
     btn.innerText = "Masuk Sistem";
     btn.disabled = false;
-    err.innerText = "Gagal terhubung ke API SheetDB: " + e.message;
+    err.innerText = "Gagal koneksi ke SheetDB: " + e.message;
     err.style.display = "block";
   }
 }
 
 function logout() {
+  if (userProfile) {
+    catatLogAktivitas(userProfile.nama, "Logout dari Sistem");
+  }
   userProfile = null;
   document.getElementById("loginUser").value = "";
   document.getElementById("loginPass").value = "";
@@ -92,36 +99,50 @@ function showPage(pageId) {
   if (pageId === 'admin-page') loadAdminDashboard();
 }
 
+// ======== FUNGSI PENCATATAN LOG AKTIVITAS (Tab LogAktivitas) ========
+async function catatLogAktivitas(namaUser, aksiStr) {
+  try {
+    let waktuStr = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+    await fetch(`${SHEETDB_URL}/?sheet=LogAktivitas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: [{ waktu: waktuStr, user: namaUser, aksi: aksiStr }] })
+    });
+  } catch (e) {
+    console.error("Gagal mencatat log aktivitas:", e);
+  }
+}
+
 // ======== KASIR (POS) - Membaca Tab Produk ========
 async function loadKasirData() {
   const tbody = document.querySelector("#productTable tbody");
-  tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Memuat menu...</td></tr>";
+  tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Memuat menu dari sheet...</td></tr>";
   try {
     let res = await fetch(`${SHEETDB_URL}/?sheet=Produk`);
     products = await res.json();
     tbody.innerHTML = "";
     if (!Array.isArray(products) || products.length === 0) {
-      tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Belum ada produk di sheet.</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Belum ada produk di sheet Produk.</td></tr>";
       return;
     }
     products.forEach((p, index) => {
       tbody.innerHTML += `<tr><td><strong>${p.nama}</strong></td><td>Rp ${parseFloat(p.harga || 0).toLocaleString()}</td><td>${p.stok || 0}</td><td><button class="btn-secondary" style="padding:6px 10px;" onclick="addToCart(${index})">Tambah</button></td></tr>`;
     });
   } catch (e) {
-    tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:red;'>Gagal memuat produk.</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:red;'>Gagal memuat produk dari sheet.</td></tr>";
   }
 }
 
 function addToCart(index) {
   const product = products[index];
   if (!product || parseInt(product.stok) <= 0) {
-    alert("Stok habis!");
+    alert("Stok produk habis!");
     return;
   }
   let item = cart.find(i => i.nama === product.nama);
   if (item) {
     if (item.qty < parseInt(product.stok)) item.qty++;
-    else alert("Stok tidak cukup!");
+    else alert("Stok tidak mencukupi!");
   } else {
     cart.push({ nama: product.nama, harga: parseFloat(product.harga), qty: 1 });
   }
@@ -142,7 +163,7 @@ function renderCart() {
 
 function openCheckoutModal() {
   if (cart.length === 0) {
-    alert("Keranjang kosong!");
+    alert("Keranjang masih kosong!");
     return;
   }
   document.getElementById("modalTotal").innerText = "Rp " + currentTotal.toLocaleString();
@@ -206,11 +227,15 @@ async function processCheckout() {
   };
 
   try {
+    // 1. Kirim transaksi ke tab 'Transaksi'
     await fetch(`${SHEETDB_URL}/?sheet=Transaksi`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data: [newTrx] })
     });
+
+    // 2. Catat log aktivitas transaksi berhasil
+    await catatLogAktivitas(userProfile ? userProfile.nama : "Kasir", `Melakukan Transaksi #${trxId}`);
 
     document.getElementById("successTrxId").innerText = "No. Trx: " + trxId;
     document.getElementById("resQueueNo").innerText = queueNo;
@@ -249,7 +274,7 @@ async function loadBaristaOrders() {
       return;
     }
 
-    orders.reverse().forEach((p, idx) => {
+    orders.reverse().forEach((p) => {
       let color = p.status === "Menunggu" ? "#f39c12" : (p.status === "Diterima" ? "#3498db" : "#28a745");
       tbody.innerHTML += `
         <tr>
@@ -270,11 +295,19 @@ function closeBaristaModal() {
   document.getElementById("baristaConfirmModal").style.display = "none";
 }
 
-// ======== ADMIN DASHBOARD ========
+// ======== ADMIN DASHBOARD - Membaca Tab Produk, Transaksi, & LogAktivitas ========
 async function loadAdminDashboard() {
   try {
-    let res = await fetch(`${SHEETDB_URL}/?sheet=Transaksi`);
-    let orders = await res.json();
+    let [resTrx, resProd, resLog] = await Promise.all([
+      fetch(`${SHEETDB_URL}/?sheet=Transaksi`),
+      fetch(`${SHEETDB_URL}/?sheet=Produk`),
+      fetch(`${SHEETDB_URL}/?sheet=LogAktivitas`)
+    ]);
+
+    let orders = await resTrx.json();
+    let prodList = await resProd.json();
+    let logList = await resLog.json();
+
     let totalTrx = Array.isArray(orders) ? orders.length : 0;
     let totalOmset = Array.isArray(orders) ? orders.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0) : 0;
 
@@ -284,9 +317,29 @@ async function loadAdminDashboard() {
     document.getElementById("dashBasket").innerText = totalTrx > 0 ? "2.0" : "0";
     document.getElementById("dashAvg").innerText = totalTrx > 0 ? "Rp " + Math.round(totalOmset / totalTrx).toLocaleString() : "Rp 0";
 
-    document.getElementById("adminStockTbody").innerHTML = "<tr><td>Kopi Susu Gula Aren</td><td><strong>50</strong></td></tr>";
-    document.getElementById("adminLogTbody").innerHTML = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${userProfile ? userProfile.nama : 'Admin'}</td><td>Login Berhasil</td></tr>`;
+    // 1. Tampilkan Sisa Stok Produk dari tab 'Produk'
+    const stockTbody = document.getElementById("adminStockTbody");
+    stockTbody.innerHTML = "";
+    if (Array.isArray(prodList) && prodList.length > 0) {
+      prodList.forEach(p => {
+        stockTbody.innerHTML += `<tr><td>${p.nama}</td><td><strong>${p.stok || 0}</strong></td></tr>`;
+      });
+    } else {
+      stockTbody.innerHTML = "<tr><td colspan='2'>Belum ada data produk.</td></tr>";
+    }
 
+    // 2. Tampilkan Log Aktivitas dari tab 'LogAktivitas'
+    const logTbody = document.getElementById("adminLogTbody");
+    logTbody.innerHTML = "";
+    if (Array.isArray(logList) && logList.length > 0) {
+      logList.reverse().slice(0, 10).forEach(l => {
+        logTbody.innerHTML += `<tr><td>${l.waktu || '-'}</td><td><strong>${l.user || '-'}</strong></td><td>${l.aksi || '-'}</td></tr>`;
+      });
+    } else {
+      logTbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Belum ada log aktivitas.</td></tr>";
+    }
+
+    // Grafik Chart.js
     const ctx = document.getElementById('omzetChart').getContext('2d');
     if (chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, {
@@ -305,6 +358,6 @@ async function loadAdminDashboard() {
       options: { responsive: true }
     });
   } catch (e) {
-    console.error("Gagal memuat admin dashboard");
+    console.error("Gagal memuat admin dashboard:", e);
   }
 }
