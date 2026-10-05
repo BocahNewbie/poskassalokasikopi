@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <title>Display Antrian - Lokasi Kopi</title>
+  <!-- Menggunakan Tailwind CSS untuk tampilan modern -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+    body { font-family: 'Poppins', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-900 text-white h-screen flex flex-col justify-between overflow-hidden p-6">
+
+  <!-- HEADER -->
+  <header class="flex justify-between items-center border-b border-slate-800 pb-4">
+    <div class="flex items-center space-x-3">
+      <span class="text-3xl">☕</span>
+      <h1 class="text-2xl font-bold tracking-wider text-amber-500">LOKASI KOPI - ANTRIAN</h1>
+    </div>
+    <div id="clock" class="text-xl font-semibold text-slate-400">00:00:00</div>
+  </header>
+
+  <!-- KONTEN UTAMA (2 KOLOM) -->
+  <main class="grid grid-cols-2 gap-8 my-auto h-[75vh]">
+    
+    <!-- KOLOM 1: SEDANG DIPROSES -->
+    <div class="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6 flex flex-col shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-4 mb-4">
+        <h2 class="text-xl font-bold text-amber-400 uppercase tracking-wide">👨‍🍳 Sedang Dibuat</h2>
+        <span class="bg-amber-500/20 text-amber-300 text-xs px-3 py-1 rounded-full font-semibold">Proses Barista</span>
+      </div>
+      <div id="list-proses" class="space-y-3 overflow-y-auto pr-2 flex-1">
+        <!-- Data akan dimasukkan lewat Javascript -->
+        <p class="text-slate-500 text-center py-10">Belum ada antrian diproses</p>
+      </div>
+    </div>
+
+    <!-- KOLOM 2: SIAP DIAMBIL / SELESAI -->
+    <div class="bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-6 flex flex-col shadow-xl">
+      <div class="flex items-center justify-between border-b border-emerald-500/30 pb-4 mb-4">
+        <h2 class="text-xl font-bold text-emerald-400 uppercase tracking-wide">✨ Silakan Diambil</h2>
+        <span class="bg-emerald-500/20 text-emerald-300 text-xs px-3 py-1 rounded-full font-semibold">Siap Saji</span>
+      </div>
+      <div id="list-selesai" class="space-y-3 overflow-y-auto pr-2 flex-1">
+        <!-- Data akan dimasukkan lewat Javascript -->
+        <p class="text-slate-500 text-center py-10">Belum ada pesanan siap</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-slate-500 text-sm border-t border-slate-800 pt-3">
+    Silakan menunggu nomor antrian Anda dipanggil. Terima kasih!
+  </footer>
+
+  <!-- SCRIPT LOGIKA -->
+  <script>
+    // Memutar jam digital di pojok kanan atas
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID');
+    }, 1000);
+
+    let statusSebelumnya = {}; // Menyimpan memori status terakhir untuk deteksi perubahan suara
+
+    // Fungsi utama mengambil data dari Google Apps Script
+    function perbaruiAntrian() {
+      google.script.run
+        .withSuccessHandler(renderDisplay)
+        .withFailureHandler(err => console.error(err))
+        .getDaftarAntrian(); // Mengambil fungsi backend yang sudah ada
+    }
+
+    function renderDisplay(dataAntrian) {
+      const divProses = document.getElementById('list-proses');
+      const divSelesai = document.getElementById('list-selesai');
+
+      let htmlProses = '';
+      let htmlSelesai = '';
+
+      let adaProsesBaru = false;
+      let dataBaruStatus = {};
+
+      if (!dataAntrian || dataAntrian.length === 0) {
+        divProses.innerHTML = '<p class="text-slate-500 text-center py-10">Tidak ada antrean aktif</p>';
+        divSelesai.innerHTML = '<p class="text-slate-500 text-center py-10">Tidak ada pesanan siap</p>';
+        return;
+      }
+
+      dataAntrian.forEach(item => {
+        // Asumsi struktur data: item.noAntrian, item.nama, item.item (daftar pesanan), item.status
+        let status = item.status ? item.status.trim() : '';
+        let noTrx = item.noAntrian;
+        
+        dataBaruStatus[noTrx] = status;
+
+        // Deteksi jika ada pesanan yang BERUBAH statusnya menjadi "Selesai"
+        if (status === 'Selesai' && statusSebelumnya[noTrx] && statusSebelumnya[noTrx] !== 'Selesai') {
+          putarSuaraPanggilan(noTrx);
+        }
+
+        if (status === 'Diproses') {
+          htmlProses += `
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex justify-between items-center animate-pulse">
+              <div>
+                <span class="text-2xl font-extrabold text-amber-300">${noTrx}</span>
+                <p class="text-sm text-slate-300 font-medium">${item.nama || 'Pelanggan'}</p>
+                <p class="text-xs text-slate-400 mt-1">${item.item || ''}</p>
+              </div>
+              <span class="bg-amber-500/20 text-amber-300 text-xs px-2.5 py-1 rounded-md font-semibold">Memasak...</span>
+            </div>
+          `;
+        } else if (status === 'Selesai') {
+          htmlSelesai += `
+            <div class="bg-emerald-900/40 border border-emerald-500/50 p-4 rounded-xl flex justify-between items-center transition-all duration-300">
+              <div>
+                <span class="text-3xl font-extrabold text-emerald-300">${noTrx}</span>
+                <p class="text-sm text-slate-200 font-medium">${item.nama || 'Pelanggan'}</p>
+                <p class="text-xs text-emerald-400/80 mt-1">${item.item || ''}</p>
+              </div>
+              <span class="bg-emerald-500 text-slate-950 text-xs px-3 py-1.5 rounded-md font-bold uppercase tracking-wider shadow">Silakan Diambil</span>
+            </div>
+          `;
+        }
+      });
+
+      divProses.innerHTML = htmlProses || '<p class="text-slate-500 text-center py-10">Tidak ada antrian diproses</p>';
+      divSelesai.innerHTML = htmlSelesai || '<p class="text-slate-500 text-center py-10">Belum ada pesanan siap</p>';
+
+      // Perbarui cache status sebelumnya
+      statusSebelumnya = dataBaruStatus;
+    }
+
+    // Fungsi Text-to-Speech untuk mengeluarkan suara nomor antrian
+    function putarSuaraPanggilan(nomor) {
+      if ('speechSynthesis' in window) {
+        // Batalkan suara yang sedang berjalan agar tidak menumpuk
+        window.speechSynthesis.cancel();
+
+        let teksPanggilan = `Nomor pesanan ${nomor}, silakan diambil di bar.`;
+        let utterance = new SpeechSynthesisUtterance(teksPanggilan);
+        utterance.lang = 'id-ID'; // Bahasa Indonesia
+        utterance.rate = 0.9;     // Kecepatan agak lambat agar jelas
+        utterance.pitch = 1.0;
+
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // Jalankan pengecekan setiap 3 detik secara otomatis
+    setInterval(perbaruiAntrian, 3000);
+    
+    // Panggil sekali saat halaman pertama kali dibuka
+    window.onload = perbaruiAntrian;
+  </script>
+</body>
+</html>
