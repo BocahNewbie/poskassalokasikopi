@@ -3,7 +3,7 @@ let currentUser = null;
 let cart = [];
 let chartInstance = null;
 
-// Default Data jika LocalStorage kosong
+// Default Data Bahan Baku & Menu
 const defaultMaterials = [
     { id: 'mat_1', name: 'Biji Kopi Arabika', stock: 2000, unit: 'gram' },
     { id: 'mat_2', name: 'Susu UHT', stock: 5000, unit: 'ml' },
@@ -59,40 +59,39 @@ function setMenus(data) { localStorage.setItem('lk_menus', JSON.stringify(data))
 function getTransactions() { return JSON.parse(localStorage.getItem('lk_transactions')) || []; }
 function setTransactions(data) { localStorage.setItem('lk_transactions', JSON.stringify(data)); }
 function getLogs() { return JSON.parse(localStorage.getItem('lk_logs')) || []; }
+
 function addLog(action) {
     let logs = getLogs();
-    logs.unshift({ time: new Date().toLocaleTimeString(), user: currentUser ? currentUser.username : 'System', action });
+    logs.unshift({ time: new Date().toLocaleTimeString(), user: currentUser ? currentUser.name : 'System', action });
     if(logs.length > 50) logs.pop();
     localStorage.setItem('lk_logs', JSON.stringify(logs));
 }
 
-// --- AUTHENTICATION ---
+// --- AUTHENTICATION (Membaca dari users.js / localStorage) ---
 function doLogin() {
     let u = document.getElementById('loginUser').value.trim();
     let p = document.getElementById('loginPass').value.trim();
     let err = document.getElementById('loginError');
 
-    if(u === 'admin' && p === 'admin123') {
-        currentUser = { username: 'Adzka Ramdhani', role: 'Admin' };
-    } else if(u === 'kasir' && p === 'kasir123') {
-        currentUser = { username: 'Kasir Lokasi', role: 'Kasir' };
-    } else if(u === 'barista' && p === 'barista123') {
-        currentUser = { username: 'Barista Tim', role: 'Barista' };
-    } else {
+    let users = getUsers();
+    let foundUser = users.find(usr => usr.username === u && usr.password === p);
+
+    if(!foundUser) {
         err.style.display = 'block';
         err.innerText = 'Username atau Password salah!';
         return;
     }
 
+    currentUser = foundUser;
     err.style.display = 'none';
-    document.getElementById('loginWelcomeText').innerText = `Selamat datang, ${currentUser.username} (${currentUser.role})`;
+    document.getElementById('loginWelcomeText').innerText = `Selamat datang, ${currentUser.name} (${currentUser.role})`;
     document.getElementById('loginSuccessModal').style.display = 'flex';
 
     setTimeout(() => {
         document.getElementById('loginSuccessModal').style.display = 'none';
         document.getElementById('login-page').style.display = 'none';
         document.getElementById('navbar').style.display = 'flex';
-        document.getElementById('userInfo').innerText = `${currentUser.username} (${currentUser.role})`;
+        document.getElementById('userInfo').innerText = `${currentUser.name} (${currentUser.role})`;
 
         let adminNav = document.getElementById('adminNav');
         if(currentUser.role === 'Admin') {
@@ -122,6 +121,48 @@ function logout() {
     document.getElementById('loginPass').value = '';
 }
 
+// --- GANTI PASSWORD MANDIRI ---
+function openChangePasswordModal() {
+    document.getElementById('oldPassInput').value = '';
+    document.getElementById('newPassInput').value = '';
+    document.getElementById('confirmPassInput').value = '';
+    document.getElementById('changePasswordModal').style.display = 'flex';
+}
+
+function closeChangePasswordModal() {
+    document.getElementById('changePasswordModal').style.display = 'none';
+}
+
+function submitChangePassword() {
+    let oldP = document.getElementById('oldPassInput').value.trim();
+    let newP = document.getElementById('newPassInput').value.trim();
+    let confP = document.getElementById('confirmPassInput').value.trim();
+
+    if(oldP !== currentUser.password) {
+        alert('Password lama salah!');
+        return;
+    }
+    if(!newP || newP.length < 4) {
+        alert('Password baru minimal 4 karakter!');
+        return;
+    }
+    if(newP !== confP) {
+        alert('Konfirmasi password baru tidak cocok!');
+        return;
+    }
+
+    let users = getUsers();
+    let usr = users.find(u => u.username === currentUser.username);
+    if(usr) {
+        usr.password = newP;
+        setUsers(users);
+        currentUser.password = newP;
+        alert('Password berhasil diubah!');
+        closeChangePasswordModal();
+        addLog('Mengubah password akun sendiri');
+    }
+}
+
 function showPage(pageId) {
     document.querySelectorAll('.page-container').forEach(el => el.style.display = 'none');
     document.getElementById(pageId).style.display = 'flex';
@@ -129,8 +170,64 @@ function showPage(pageId) {
     if(pageId === 'admin-page') loadAdminDashboard();
     if(pageId === 'admin-menu-page') loadAdminMenuPage();
     if(pageId === 'admin-stock-page') loadAdminStockPage();
+    if(pageId === 'admin-users-page') loadAdminUsersPage();
     if(pageId === 'kasir-page') loadKasirProducts();
     if(pageId === 'barista-page') loadBaristaOrders();
+}
+
+// --- TAB 6: ADMIN KELOLA USER & KARYAWAN ---
+function loadAdminUsersPage() {
+    let users = getUsers();
+    let tbody = document.getElementById('adminUsersTbody');
+
+    tbody.innerHTML = users.map(u => `
+        <tr>
+            <td><strong>${u.name}</strong></td>
+            <td><code>${u.username}</code></td>
+            <td><code>${u.password}</code></td>
+            <td><span style="font-weight:600; color:var(--primary-navy);">${u.role}</span></td>
+            <td>
+                ${u.username === 'admin' ? '<em style="color:text-muted; font-size:0.8em;">Utama</em>' : `<button class="btn-danger" style="padding:4px 8px; font-size:0.8em;" onclick="deleteUser('${u.username}')">Hapus</button>`}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function addNewUser() {
+    let name = document.getElementById('inputUserName').value.trim();
+    let username = document.getElementById('inputUserUsername').value.trim().toLowerCase();
+    let password = document.getElementById('inputUserPassword').value.trim();
+    let role = document.getElementById('inputUserRole').value;
+
+    if(!name || !username || !password) {
+        alert('Mohon lengkapi semua kolom input karyawan!');
+        return;
+    }
+
+    let users = getUsers();
+    if(users.some(u => u.username === username)) {
+        alert('Username sudah digunakan oleh akun lain!');
+        return;
+    }
+
+    users.push({ id: 'usr_' + Date.now(), name, username, password, role });
+    setUsers(users);
+
+    document.getElementById('inputUserName').value = '';
+    document.getElementById('inputUserUsername').value = '';
+    document.getElementById('inputUserPassword').value = '';
+    loadAdminUsersPage();
+    addLog(`Menambahkan user baru: ${username} (${role})`);
+    alert(`Berhasil mendaftarkan karyawan ${name}!`);
+}
+
+function deleteUser(username) {
+    if(confirm(`Yakin ingin menghapus akses untuk username '${username}'?`)) {
+        let users = getUsers().filter(u => u.username !== username);
+        setUsers(users);
+        loadAdminUsersPage();
+        addLog(`Menghapus user: ${username}`);
+    }
 }
 
 // --- HITUNG STOK MAKSIMUM MENU BERDASARKAN RESEP ---
@@ -148,12 +245,11 @@ function calculateMaxMenuStock(menu) {
     return maxPortions === Infinity ? 0 : maxPortions;
 }
 
-// --- MODUL 4 & 5: ADMIN KELOLA MENU, RESEP & STOK ---
+// --- MODUL 4: ADMIN KELOLA MENU & RESEP ---
 function loadAdminMenuPage() {
     let menus = getMenus();
     let materials = getMaterials();
 
-    // Select dropdown menu & material
     let menuSelect = document.getElementById('recipeMenuSelect');
     let matSelect = document.getElementById('recipeMaterialSelect');
 
@@ -164,7 +260,6 @@ function loadAdminMenuPage() {
     renderRecipePreview();
 }
 
-let activeRecipeDraft = [];
 document.getElementById('recipeMenuSelect')?.addEventListener('change', function() {
     renderRecipePreview();
 });
@@ -199,13 +294,7 @@ function saveMenu() {
     }
 
     let menus = getMenus();
-    let newMenu = {
-        id: 'menu_' + Date.now(),
-        name,
-        category,
-        price,
-        recipe: []
-    };
+    let newMenu = { id: 'menu_' + Date.now(), name, category, price, recipe: [] };
     menus.push(newMenu);
     setMenus(menus);
 
@@ -229,7 +318,6 @@ function addRecipeItem() {
     let m = menus.find(x => x.id === menuId);
     if(m) {
         if(!m.recipe) m.recipe = [];
-        // Cek jika bahan sudah ada, update takarannya
         let existing = m.recipe.find(r => r.materialId === materialId);
         if(existing) {
             existing.amount = amount;
@@ -279,7 +367,7 @@ function deleteMenu(id) {
     }
 }
 
-// Modul Bahan Baku & Stok
+// --- MODUL 5: ADMIN STOK BAHAN BAKU ---
 function loadAdminStockPage() {
     let materials = getMaterials();
     let select = document.getElementById('restockMatSelect');
@@ -332,7 +420,6 @@ function processRestock() {
 function renderAdminMaterialList() {
     let materials = getMaterials();
     let tbody = document.getElementById('adminMaterialListTbody');
-
     tbody.innerHTML = materials.map(m => `<tr>
         <td><strong>${m.name}</strong></td>
         <td><strong style="color:var(--primary-navy);">${m.stock}</strong></td>
@@ -342,7 +429,7 @@ function renderAdminMaterialList() {
 }
 
 function deleteMaterial(id) {
-    if(confirm('Hapus bahan baku ini? Pastikan tidak terikat di resep aktif.')) {
+    if(confirm('Hapus bahan baku ini?')) {
         let materials = getMaterials().filter(m => m.id !== id);
         setMaterials(materials);
         loadAdminStockPage();
@@ -445,7 +532,7 @@ function removeFromCart(menuId) {
     renderCart();
 }
 
-// --- CHECKOUT & REDUKSI STOK OTOMATIS BERDASARKAN RESEP ---
+// --- CHECKOUT & REDUKSI STOK OTOMATIS ---
 let currentCheckoutTotal = 0;
 function openCheckoutModal() {
     if(cart.length === 0) {
@@ -497,7 +584,6 @@ function processCheckout() {
     let cash = parseFloat(document.getElementById('cashInput').value) || 0;
     let change = cash - currentCheckoutTotal;
 
-    // REDUKSI STOK BAHAN BAKU BERDASARKAN RESEP
     let materials = getMaterials();
     for(let item of cart) {
         if(item.recipe && item.recipe.length > 0) {
@@ -512,7 +598,6 @@ function processCheckout() {
     }
     setMaterials(materials);
 
-    // Simpan Transaksi & Antrean Barista
     let trxId = 'TRX-' + Math.floor(1000 + Math.random() * 9000);
     let queueNo = 'A-' + Math.floor(100 + Math.random() * 900);
     let trxData = {
@@ -533,7 +618,6 @@ function processCheckout() {
 
     closeCheckoutModal();
 
-    // Tampilkan Modal Struk Berhasil
     document.getElementById('successTrxId').innerText = trxId;
     document.getElementById('resQueueNo').innerText = queueNo;
     document.getElementById('resCartItems').innerHTML = cart.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td style="text-align: right;">Rp ${(i.price*i.qty).toLocaleString()}</td></tr>`).join('');
@@ -608,11 +692,9 @@ function loadAdminDashboard() {
     document.getElementById('dashBasket').innerText = basketSize;
     document.getElementById('dashAvg').innerText = `Rp ${avgBelanja.toLocaleString()}`;
 
-    // Tabel Sisa Stok di Dashboard
     let stockTbody = document.getElementById('adminStockTbody');
     stockTbody.innerHTML = materials.map(m => `<tr><td>${m.name}</td><td><strong>${m.stock}</strong> ${m.unit}</td></tr>`).join('');
 
-    // Tabel Log
     let logTbody = document.getElementById('adminLogTbody');
     let logs = getLogs();
     if(logs.length === 0) {
@@ -628,7 +710,6 @@ function renderChart(transactions) {
     const ctx = document.getElementById('omzetChart').getContext('2d');
     if(chartInstance) chartInstance.destroy();
 
-    // Rekap sederhana per transaksi terakhir
     let labels = transactions.slice(0, 7).reverse().map(t => t.id);
     let data = transactions.slice(0, 7).reverse().map(t => t.total);
 
@@ -649,5 +730,5 @@ function renderChart(transactions) {
     });
 }
 
-// Run initial storage setup on load
+// Inisialisasi Storage saat aplikasi dimuat
 initStorage();
