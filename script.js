@@ -123,3 +123,62 @@ function submitChangePassword() {
         closeChangePasswordModal();
     }
 }
+
+// --- RENDER DASHBOARD ADMIN UTAMA ---
+function loadAdminDashboard() {
+    const adminPage = document.getElementById('admin-page');
+    adminPage.innerHTML = `
+        <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+            <h2>Panel Admin - Lokasi Kopi</h2>
+            <div style="display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap;">
+                <button class="btn-primary" onclick="switchAdminTab('menu')">Kelola Menu</button>
+                <button class="btn-primary" onclick="switchAdminTab('stock')">Stok & Bahan</button>
+                <button class="btn-primary" onclick="switchAdminTab('recipe')">Resep Menu</button>
+                <button class="btn-primary" onclick="switchAdminTab('users')">Kelola User</button>
+            </div>
+            <div id="adminTabContent" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <!-- Konten dinamis tab admin -->
+            </div>
+        </div>
+    `;
+    switchAdminTab('menu'); // Default tab
+}
+
+function switchAdminTab(tab) {
+    const container = document.getElementById('adminTabContent');
+    if (tab === 'menu') {
+        let menus = getMenus();
+        container.innerHTML = `
+            <h3>Daftar Menu</h3>
+            <table style="width:100%; margin-top:15px; border-collapse: collapse;">
+                <tr><th style="text-align:left; padding:8px;">Nama</th><th style="text-align:left; padding:8px;">Kategori</th><th style="text-align:left; padding:8px;">Harga</th></tr>
+                ${menus.map(m => `<tr><td style="padding:8px; border-bottom:1px solid #eee;">${m.name}</td><td style="padding:8px; border-bottom:1px solid #eee;">${m.category}</td><td style="padding:8px; border-bottom:1px solid #eee;">Rp ${m.price.toLocaleString()}</td></tr>`).join('')}
+            </table>
+        `;
+    } else if (tab === 'stock') {
+        let stocks = getMaterials();
+        container.innerHTML = `
+            <h3>Stok Bahan Baku</h3>
+            <table style="width:100%; margin-top:15px; border-collapse: collapse;">
+                <tr><th style="text-align:left; padding:8px;">Nama Bahan</th><th style="text-align:left; padding:8px;">Jumlah Stok</th><th style="text-align:left; padding:8px;">Satuan</th></tr>
+                ${stocks.map(s => `<tr><td style="padding:8px; border-bottom:1px solid #eee;">${s.name}</td><td style="padding:8px; border-bottom:1px solid #eee;">${s.stock}</td><td style="padding:8px; border-bottom:1px solid #eee;">${s.unit}</td></tr>`).join('')}
+            </table>
+        `;
+    } else if (tab === 'recipe') {
+        let recipes = getRecipes();
+        container.innerHTML = `
+            <h3>Komposisi Resep Menu</h3>
+            <p style="color: #666; margin-top: 5px;">Menghubungkan menu dengan takaran bahan baku.</p>
+            <pre style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">${JSON.stringify(recipes, null, 2)}</pre>
+        `;
+    } else if (tab === 'users') {
+        let users = getUsers();
+        container.innerHTML = `
+            <h3>Kelola User / Karyawan</h3>
+            <table style="width:100%; margin-top:15px; border-collapse: collapse;">
+                <tr><th style="text-align:left; padding:8px;">Username</th><th style="text-align:left; padding:8px;">Nama Lengkap</th><th style="text-align:left; padding:8px;">Role</th></tr>
+                ${users.map(u => `<tr><td style="padding:8px; border-bottom:1px solid #eee;">${u.username}</td><td style="padding:8px; border-bottom:1px solid #eee;">${u.name}</td><td style="padding:8px; border-bottom:1px solid #eee;">${u.role}</td></tr>`).join('')}
+            </table>
+        `;
+    }
+}
