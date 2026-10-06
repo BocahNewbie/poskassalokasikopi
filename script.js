@@ -49,7 +49,7 @@ function logout() {
     document.getElementById('loginPass').value = '';
 }
 
-// --- FUNGSI RENDER DASHBOARD ADMIN UTAMA ---
+// --- RENDER DASHBOARD ADMIN UTAMA (Hanya 1 Fungsi) ---
 function loadAdminDashboard() {
     const adminPage = document.getElementById('admin-page');
     adminPage.innerHTML = `
