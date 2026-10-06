@@ -1,43 +1,13 @@
 // --- STATE & INITIALIZATION ---
 let currentUser = null;
 let cart = [];
-let chartInstance = null;
 
-function initStorage() {
-    // Inisialisasi awal jika localStorage masih kosong
-    if (!localStorage.getItem('lk_transactions')) {
-        localStorage.setItem('lk_transactions', JSON.stringify([]));
-    }
-    if (!localStorage.getItem('lk_logs')) {
-        localStorage.setItem('lk_logs', JSON.stringify([]));
-    }
-}
-
-// Mengambil data transaksi dan log (data master lain diambil dari file modul masing-masing)
-function getTransactions() {
-    return JSON.parse(localStorage.getItem('lk_transactions')) || [];
-}
-function setTransactions(data) {
-    localStorage.setItem('lk_transactions', JSON.stringify(data));
-}
-function getLogs() {
-    return JSON.parse(localStorage.getItem('lk_logs')) || [];
-}
-function addLog(action) {
-    let logs = getLogs();
-    logs.unshift({ time: new Date().toLocaleTimeString(), user: currentUser ? currentUser.name : 'System', action });
-    if(logs.length > 50) logs.pop();
-    localStorage.setItem('lk_logs', JSON.stringify(logs));
-}
-
-// --- AUTHENTICATION (Membaca dari user.js) ---
 function doLogin() {
     let u = document.getElementById('loginUser').value.trim();
     let p = document.getElementById('loginPass').value.trim();
     let err = document.getElementById('loginError');
     
-    // getUsers() berasal dari user.js
-    let users = getUsers();
+    let users = typeof getUsers === 'function' ? getUsers() : [];
     let foundUser = users.find(usr => usr.username === u && usr.password === p);
     
     if(!foundUser) {
@@ -57,27 +27,21 @@ function doLogin() {
         document.getElementById('navbar').style.display = 'flex';
         document.getElementById('userInfo').innerText = `${currentUser.name} (${currentUser.role})`;
         
-        let adminNav = document.getElementById('adminNav');
         if(currentUser.role === 'Admin') {
-            adminNav.style.display = 'flex';
-            showPage('admin-page');
+            document.getElementById('admin-page').style.display = 'block';
             loadAdminDashboard();
         } else if(currentUser.role === 'Kasir') {
-            adminNav.style.display = 'none';
-            showPage('kasir-page');
-            loadKasirProducts();
+            document.getElementById('kasir-page').style.display = 'block';
+            loadKasirPage();
         } else if(currentUser.role === 'Barista') {
-            adminNav.style.display = 'none';
-            showPage('barista-page');
-            loadBaristaOrders();
+            document.getElementById('barista-page').style.display = 'block';
+            loadBaristaPage();
         }
-        addLog(`Login ke sistem sebagai ${currentUser.role}`);
     }, 1000);
 }
 
 function logout() {
     currentUser = null;
-    cart = [];
     document.getElementById('navbar').style.display = 'none';
     document.querySelectorAll('.page-container').forEach(el => el.style.display = 'none');
     document.getElementById('login-page').style.display = 'flex';
@@ -85,7 +49,39 @@ function logout() {
     document.getElementById('loginPass').value = '';
 }
 
-// --- GANTI PASSWORD MANDIRI (Untuk Semua User di Dashboard) ---
+// --- FUNGSI RENDER DASHBOARD ADMIN ---
+function loadAdminDashboard() {
+    const adminPage = document.getElementById('admin-page');
+    adminPage.innerHTML = `
+        <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+            <h2>Panel Admin - Kelola Sistem</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
+                <div class="login-card" style="text-align: left; padding: 20px;">
+                    <h3>Kelola Menu & Harga</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9em; margin: 10px 0;">Tambah dan atur menu kopi atau makanan.</p>
+                </div>
+                <div class="login-card" style="text-align: left; padding: 20px;">
+                    <h3>Resep & Stok Bahan</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9em; margin: 10px 0;">Atur komposisi resep dan pantau stok bahan baku.</p>
+                </div>
+                <div class="login-card" style="text-align: left; padding: 20px;">
+                    <h3>Kelola User</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9em; margin: 10px 0;">Tambah atau ubah akses pengguna sistem.</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function loadKasirPage() {
+    document.getElementById('kasir-page').innerHTML = `<div style="padding: 20px;"><h2>Dashboard Kasir</h2></div>`;
+}
+
+function loadBaristaPage() {
+    document.getElementById('barista-page').innerHTML = `<div style="padding: 20px;"><h2>Dashboard Barista</h2></div>`;
+}
+
+// --- FITUR GANTI PASSWORD ---
 function openChangePasswordModal() {
     document.getElementById('oldPassInput').value = '';
     document.getElementById('newPassInput').value = '';
@@ -102,10 +98,7 @@ function submitChangePassword() {
     let newP = document.getElementById('newPassInput').value.trim();
     let confP = document.getElementById('confirmPassInput').value.trim();
 
-    if (!currentUser) {
-        alert('Sesi habis, silakan login ulang.');
-        return;
-    }
+    if (!currentUser) return;
 
     if (oldP !== currentUser.password) {
         alert('Password lama salah!');
@@ -120,15 +113,13 @@ function submitChangePassword() {
         return;
     }
 
-    // Update pada data user global (user.js / localStorage)
-    let users = getUsers();
+    let users = typeof getUsers === 'function' ? getUsers() : [];
     let usr = users.find(u => u.username === currentUser.username);
     if (usr) {
         usr.password = newP;
-        setUsers(users); // Simpan perubahan ke penyimpanan user
+        if (typeof setUsers === 'function') setUsers(users);
         currentUser.password = newP;
         alert('Password berhasil diubah!');
         closeChangePasswordModal();
-        addLog('Mengubah password akun sendiri');
     }
 }
