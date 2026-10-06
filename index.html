@@ -12,15 +12,17 @@
     <!-- NAVBAR -->
     <div id="navbar" class="navbar" style="display: none;">
         <div class="nav-brand">☕ LOKASI KOPI KASSA</div>
-        <div class="nav-menu" id="adminNav" style="display: none;">
+        <div class="nav-menu" id="adminNav" style="display: none; flex-wrap: wrap;">
             <button onclick="showPage('admin-page')" class="active-nav">Dashboard</button>
             <button onclick="showPage('kasir-page')">Akses Kasir</button>
             <button onclick="showPage('barista-page')">Akses Barista</button>
-            <button onclick="showPage('admin-menu-page')">4. Input Menu & Resep</button>
-            <button onclick="showPage('admin-stock-page')">5. Stok Bahan Baku</button>
+            <button onclick="showPage('admin-menu-page')">4. Menu & Resep</button>
+            <button onclick="showPage('admin-stock-page')">5. Stok Bahan</button>
+            <button onclick="showPage('admin-users-page')">6. Kelola User</button>
         </div>
-        <div class="nav-user">
-            <span id="userInfo" style="margin-right: 12px; font-size: 0.9em; font-weight: 500;">Role</span>
+        <div class="nav-user" style="display: flex; gap: 8px; align-items: center;">
+            <span id="userInfo" style="font-size: 0.9em; font-weight: 500;">Role</span>
+            <button class="btn-secondary" onclick="openChangePasswordModal()" style="padding: 6px 10px; font-size: 0.8em; background: rgba(255,255,255,0.15); color:white; border:none;">Ganti Pass</button>
             <button class="btn-danger" onclick="logout()">Logout</button>
         </div>
     </div>
@@ -43,6 +45,20 @@
             <div class="success-icon">✓</div>
             <h3 style="color: var(--primary-navy); margin-bottom: 5px;">Login Berhasil!</h3>
             <p id="loginWelcomeText" style="color: var(--text-muted); font-size: 0.9em;">Memuat sistem...</p>
+        </div>
+    </div>
+
+    <!-- MODAL GANTI PASSWORD MANDIRI -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content" style="width: 380px;">
+            <h3 style="color: var(--primary-navy);">Ubah Password Anda</h3>
+            <div class="modal-row"><label>Password Lama</label><input type="password" id="oldPassInput" placeholder="Masukkan password lama"></div>
+            <div class="modal-row"><label>Password Baru</label><input type="password" id="newPassInput" placeholder="Masukkan password baru"></div>
+            <div class="modal-row"><label>Konfirmasi Password Baru</label><input type="password" id="confirmPassInput" placeholder="Ulangi password baru"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeChangePasswordModal()">Batal</button>
+                <button class="btn-primary" onclick="submitChangePassword()" style="margin-top:0;">Simpan Password</button>
+            </div>
         </div>
     </div>
 
@@ -96,19 +112,10 @@
                 </div>
                 <div style="flex: 1.5; min-width: 300px; background: #f8fafc; padding: 15px; border-radius: 8px;">
                     <h4 style="margin-top:0; color:var(--primary-navy);">Atur Komposisi Resep Menu</h4>
-                    <div class="modal-row">
-                        <label>Pilih Menu</label>
-                        <select id="recipeMenuSelect"></select>
-                    </div>
-                    <div class="modal-row">
-                        <label>Pilih Bahan Baku</label>
-                        <select id="recipeMaterialSelect"></select>
-                    </div>
-                    <div class="modal-row">
-                        <label>Takaran per Porsi</label>
-                        <input type="number" id="recipeAmount" placeholder="Contoh: 18 (gram/ml/pcs)">
-                    </div>
-                    <button class="btn-secondary" onclick="addRecipeItem()" style="width:100%; margin-top:5px;">+ Tambahkan Bahan ke Resep Menu Ini</button>
+                    <div class="modal-row"><label>Pilih Menu</label><select id="recipeMenuSelect"></select></div>
+                    <div class="modal-row"><label>Pilih Bahan Baku</label><select id="recipeMaterialSelect"></select></div>
+                    <div class="modal-row"><label>Takaran per Porsi</label><input type="number" id="recipeAmount" placeholder="Contoh: 18"></div>
+                    <button class="btn-secondary" onclick="addRecipeItem()" style="width:100%; margin-top:5px;">+ Tambahkan Bahan ke Resep</button>
                     <div id="recipePreviewList" style="margin-top: 12px; font-size: 0.9em; max-height: 120px; overflow-y: auto;"></div>
                 </div>
             </div>
@@ -126,22 +133,16 @@
             <h2>📦 Manajemen & Restock Bahan Baku</h2>
             <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 250px;">
-                    <div class="modal-row"><label>Nama Bahan Baku</label><input type="text" id="inputMatName" placeholder="Contoh: Biji Kopi Arabika, Susu UHT"></div>
+                    <div class="modal-row"><label>Nama Bahan Baku</label><input type="text" id="inputMatName" placeholder="Contoh: Biji Kopi"></div>
                     <div class="modal-row"><label>Satuan</label><input type="text" id="inputMatUnit" placeholder="Contoh: gram, ml, pcs"></div>
-                    <div class="modal-row"><label>Stok Awal / Tambahan</label><input type="number" id="inputMatStock" placeholder="Contoh: 1000"></div>
-                    <button class="btn-primary" onclick="saveMaterial()" style="margin-top: 10px;">Tambah Bahan Baku Baru</button>
+                    <div class="modal-row"><label>Stok Awal</label><input type="number" id="inputMatStock" placeholder="Contoh: 1000"></div>
+                    <button class="btn-primary" onclick="saveMaterial()" style="margin-top: 10px;">Tambah Bahan Baku</button>
                 </div>
                 <div style="flex: 1.5; min-width: 300px; background: #f8fafc; padding: 15px; border-radius: 8px;">
                     <h4 style="margin-top:0; color:var(--primary-navy);">Restock / Tambah Stok Masuk</h4>
-                    <div class="modal-row">
-                        <label>Pilih Bahan Baku</label>
-                        <select id="restockMatSelect"></select>
-                    </div>
-                    <div class="modal-row">
-                        <label>Jumlah Masuk (+)</label>
-                        <input type="number" id="restockQty" placeholder="Contoh: 500">
-                    </div>
-                    <button class="btn-primary" onclick="processRestock()" style="width:100%; margin-top:5px; background:var(--success);">Update / Tambah Stok</button>
+                    <div class="modal-row"><label>Pilih Bahan Baku</label><select id="restockMatSelect"></select></div>
+                    <div class="modal-row"><label>Jumlah Masuk (+)</label><input type="number" id="restockQty" placeholder="Contoh: 500"></div>
+                    <button class="btn-primary" onclick="processRestock()" style="width:100%; margin-top:5px; background:var(--success);">Update Stok</button>
                 </div>
             </div>
             <h3>Daftar Inventaris Bahan Baku</h3>
@@ -149,6 +150,45 @@
                 <thead><tr><th>Nama Bahan</th><th>Stok Saat Ini</th><th>Satuan</th><th>Aksi</th></tr></thead>
                 <tbody id="adminMaterialListTbody"></tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- TAB 6: ADMIN KELOLA USER / KARYAWAN -->
+    <div id="admin-users-page" class="page-container" style="display: none; flex-direction: column; gap: 20px;">
+        <div class="card" style="width: 100%;">
+            <h2>👥 Manajemen Pengguna & Karyawan (Monitoring Username & Password)</h2>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <h4 style="margin-top:0; color:var(--primary-navy);">Tambah Karyawan / User Baru</h4>
+                    <div class="modal-row"><label>Nama Lengkap</label><input type="text" id="inputUserName" placeholder="Contoh: Budi Barista"></div>
+                    <div class="modal-row"><label>Username</label><input type="text" id="inputUserUsername" placeholder="Contoh: budibarista"></div>
+                    <div class="modal-row"><label>Password</label><input type="text" id="inputUserPassword" placeholder="Contoh: rahasia123"></div>
+                    <div class="modal-row">
+                        <label>Role Akses</label>
+                        <select id="inputUserRole" style="padding:12px; border:1px solid var(--border-color); border-radius:8px;">
+                            <option value="Kasir">Kasir</option>
+                            <option value="Barista">Barista</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="addNewUser()" style="margin-top: 10px;">Simpan Karyawan Baru</button>
+                </div>
+                <div style="flex: 1.5; min-width: 300px;">
+                    <h4 style="margin-bottom: 10px; color: var(--primary-navy);">Monitoring Daftar Akun Aktif</h4>
+                    <table id="adminUsersTable">
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Username</th>
+                                <th>Password</th>
+                                <th>Role</th>
+                                <th>Hapus</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminUsersTbody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -163,19 +203,6 @@
                 <thead><tr><th>Jam</th><th>No. Trx</th><th>Daftar Pesanan (Qty)</th><th>Status</th><th>Aksi Tahapan</th></tr></thead>
                 <tbody id="baristaTbody"></tbody>
             </table>
-        </div>
-    </div>
-
-    <!-- MODAL KONFIRMASI BARISTA -->
-    <div id="baristaConfirmModal" class="modal">
-        <div class="modal-content text-center" style="width: 380px;">
-            <div style="font-size: 2.5em; margin-bottom: 5px;">⚠️</div>
-            <h3 style="color: var(--primary-navy); margin-bottom: 5px;">Konfirmasi Status</h3>
-            <p id="baristaConfirmText" style="color: var(--text-muted); font-size: 0.95em; margin-bottom: 15px;">Ubah status pesanan?</p>
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeBaristaModal()">Batal</button>
-                <button class="btn-primary" id="btnConfirmBaristaYes" style="margin-top:0;">Ya, Lanjutkan</button>
-            </div>
         </div>
     </div>
 
@@ -254,6 +281,8 @@
         </div>
     </div>
 
+    <!-- Load users.js terlebih dahulu, lalu script.js -->
+    <script src="users.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
