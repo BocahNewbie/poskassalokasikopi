@@ -1,188 +1,259 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LOKASI KOPI - Sistem Kasir & Barista</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LOKASI KOPI - Sistem Kasir & Barista</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- NAVBAR -->
-  <div id="navbar" class="navbar" style="display: none;">
-    <div class="nav-brand">☕ LOKASI KOPI KASSA</div>
-    <div class="nav-menu" id="adminNav" style="display: none;">
-      <button onclick="showPage('admin-page')">Dashboard Admin</button>
-      <button onclick="showPage('kasir-page')">Akses Kasir</button>
-      <button onclick="showPage('barista-page')">Akses Barista</button>
+    <!-- NAVBAR -->
+    <div id="navbar" class="navbar" style="display: none;">
+        <div class="nav-brand">☕ LOKASI KOPI KASSA</div>
+        <div class="nav-menu" id="adminNav" style="display: none;">
+            <button onclick="showPage('admin-page')" class="active-nav">Dashboard</button>
+            <button onclick="showPage('kasir-page')">Akses Kasir</button>
+            <button onclick="showPage('barista-page')">Akses Barista</button>
+            <button onclick="showPage('admin-menu-page')">4. Input Menu & Resep</button>
+            <button onclick="showPage('admin-stock-page')">5. Stok Bahan Baku</button>
+        </div>
+        <div class="nav-user">
+            <span id="userInfo" style="margin-right: 12px; font-size: 0.9em; font-weight: 500;">Role</span>
+            <button class="btn-danger" onclick="logout()">Logout</button>
+        </div>
     </div>
-    <div class="nav-user">
-      <span id="userInfo" style="margin-right: 12px; font-size: 0.9em; font-weight: 500;">Role</span>
-      <button class="btn-danger" onclick="logout()">Logout</button>
-    </div>
-  </div>
 
-  <!-- HALAMAN LOGIN -->
-  <div id="login-page" class="page-container" style="display: flex;">
-    <div class="login-card">
-      <div style="text-align:center; font-size: 2.8em; margin-bottom: 5px;">☕</div>
-      <h2 style="text-align: center; border: none; margin-bottom: 20px; color: var(--primary-navy);">Sistem Kasir Terpadu</h2>
-      <div class="modal-row"><label>Username</label><input type="text" id="loginUser" placeholder="Masukkan username"></div>
-      <div class="modal-row"><label>Password</label><input type="password" id="loginPass" placeholder="Masukkan password"></div>
-      <button class="btn-primary" onclick="doLogin()" id="btnLogin" style="margin-top: 10px;">Masuk Sistem</button>
-      <p id="loginError" style="color: var(--danger); text-align: center; display: none; margin-top: 12px; font-size: 0.9em; font-weight: 500;"></p>
+    <!-- HALAMAN LOGIN -->
+    <div id="login-page" class="page-container" style="display: flex;">
+        <div class="login-card">
+            <div style="text-align:center; font-size: 2.8em; margin-bottom: 5px;">☕</div>
+            <h2 style="text-align: center; border: none; margin-bottom: 20px; color: var(--primary-navy);">Sistem Kasir Terpadu</h2>
+            <div class="modal-row"><label>Username</label><input type="text" id="loginUser" placeholder="Masukkan username"></div>
+            <div class="modal-row"><label>Password</label><input type="password" id="loginPass" placeholder="Masukkan password"></div>
+            <button class="btn-primary" onclick="doLogin()" id="btnLogin" style="margin-top: 10px;">Masuk Sistem</button>
+            <p id="loginError" style="color: var(--danger); text-align: center; display: none; margin-top: 12px; font-size: 0.9em; font-weight: 500;"></p>
+        </div>
     </div>
-  </div>
 
-  <!-- MODAL LOGIN SUKSES -->
-  <div id="loginSuccessModal" class="modal">
-    <div class="modal-content text-center" style="width: 320px;">
-      <div class="success-icon">✓</div>
-      <h3 style="color: var(--primary-navy); margin-bottom: 5px;">Login Berhasil!</h3>
-      <p id="loginWelcomeText" style="color: var(--text-muted); font-size: 0.9em;">Memuat sistem...</p>
+    <!-- MODAL LOGIN SUKSES -->
+    <div id="loginSuccessModal" class="modal">
+        <div class="modal-content text-center" style="width: 320px;">
+            <div class="success-icon">✓</div>
+            <h3 style="color: var(--primary-navy); margin-bottom: 5px;">Login Berhasil!</h3>
+            <p id="loginWelcomeText" style="color: var(--text-muted); font-size: 0.9em;">Memuat sistem...</p>
+        </div>
     </div>
-  </div>
 
-  <!-- HALAMAN ADMIN -->
-  <div id="admin-page" class="page-container" style="display: none; flex-direction: column; gap: 20px;">
-    <div class="card" style="width: 100%;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>📊 Dashboard Analitik & Statistik</h2>
-        <button class="btn-secondary" onclick="loadAdminDashboard()">🔄 Segarkan Data</button>
-      </div>
-      <div class="dashboard-cards">
-        <div class="dash-card dash-trx"><h4>Total Transaksi</h4><h2 id="dashTrx">0</h2></div>
-        <div class="dash-card dash-omset"><h4>Total Omset</h4><h2 id="dashOmset">Rp 0</h2></div>
-        <div class="dash-card dash-item"><h4>Produk Terjual</h4><h2 id="dashItem">0</h2></div>
-        <div class="dash-card dash-basket"><h4>Basket Size</h4><h2 id="dashBasket">0</h2></div>
-        <div class="dash-card dash-avg"><h4>Rata-rata Belanja</h4><h2 id="dashAvg">Rp 0</h2></div>
-      </div>
+    <!-- HALAMAN ADMIN (DASHBOARD) -->
+    <div id="admin-page" class="page-container" style="display: none; flex-direction: column; gap: 20px;">
+        <div class="card" style="width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>📊 Dashboard Analitik & Statistik</h2>
+                <button class="btn-secondary" onclick="loadAdminDashboard()">🔄 Segarkan Data</button>
+            </div>
+            <div class="dashboard-cards">
+                <div class="dash-card dash-trx"><h4>Total Transaksi</h4><h2 id="dashTrx">0</h2></div>
+                <div class="dash-card dash-omset"><h4>Total Omset</h4><h2 id="dashOmset">Rp 0</h2></div>
+                <div class="dash-card dash-item"><h4>Produk Terjual</h4><h2 id="dashItem">0</h2></div>
+                <div class="dash-card dash-basket"><h4>Basket Size</h4><h2 id="dashBasket">0</h2></div>
+                <div class="dash-card dash-avg"><h4>Rata-rata Belanja</h4><h2 id="dashAvg">Rp 0</h2></div>
+            </div>
+        </div>
+        <div class="card" style="width: 100%;">
+            <h2 style="border:none; margin-bottom:0;">📈 Grafik Omset & Penjualan</h2>
+            <canvas id="omzetChart" height="55"></canvas>
+        </div>
+        <div style="display: flex; gap: 20px; width: 100%; align-items: flex-start;">
+            <div class="card" style="flex: 1;">
+                <h2>📦 Sisa Stok Bahan Baku / Menu</h2>
+                <table id="adminStockTable">
+                    <thead><tr><th>Item</th><th>Stok / Sisa</th></tr></thead>
+                    <tbody id="adminStockTbody"><tr><td colspan="2" style="text-align:center;">Memuat...</td></tr></tbody>
+                </table>
+            </div>
+            <div class="card" style="flex: 1.5;">
+                <h2>📜 Log Aktivitas Sistem</h2>
+                <table style="font-size: 0.85em;">
+                    <thead><tr><th>Waktu</th><th>User</th><th>Aksi</th></tr></thead>
+                    <tbody id="adminLogTbody"><tr><td colspan="3" style="text-align:center;">Memuat...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div class="card" style="width: 100%;">
-      <h2 style="border:none; margin-bottom:0;">📈 Grafik Omset & Penjualan</h2>
-      <canvas id="omzetChart" height="55"></canvas>
-    </div>
-    <div style="display: flex; gap: 20px; width: 100%; align-items: flex-start;">
-      <div class="card" style="flex: 1;">
-        <h2>📦 Sisa Stok Produk</h2>
-        <table id="adminStockTable">
-          <thead><tr><th>Menu</th><th>Stok</th></tr></thead>
-          <tbody id="adminStockTbody"><tr><td colspan="2" style="text-align:center;">Memuat...</td></tr></tbody>
-        </table>
-      </div>
-      <div class="card" style="flex: 1.5;">
-        <h2>📜 Log Aktivitas Sistem</h2>
-        <table style="font-size: 0.85em;">
-          <thead><tr><th>Waktu</th><th>User</th><th>Aksi</th></tr></thead>
-          <tbody id="adminLogTbody"><tr><td colspan="3" style="text-align:center;">Memuat...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
 
-  <!-- HALAMAN BARISTA -->
-  <div id="barista-page" class="page-container" style="display: none; align-items: flex-start;">
-    <div class="card" style="width: 100%;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>📋 Antrean Pesanan Barista</h2>
-        <button class="btn-secondary" onclick="loadBaristaOrders()">🔄 Segarkan Antrean</button>
-      </div>
-      <table id="baristaTable">
-        <thead><tr><th>Jam</th><th>No. Trx</th><th>Daftar Pesanan (Qty)</th><th>Status</th><th>Aksi Tahapan</th></tr></thead>
-        <tbody id="baristaTbody"></tbody>
-      </table>
+    <!-- TAB 4: ADMIN INPUT MENU & RESEP -->
+    <div id="admin-menu-page" class="page-container" style="display: none; flex-direction: column; gap: 20px;">
+        <div class="card" style="width: 100%;">
+            <h2>📝 Kelola Menu & Resep Otomatis</h2>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <div class="modal-row"><label>Nama Menu</label><input type="text" id="inputMenuName" placeholder="Contoh: Caffè Latte"></div>
+                    <div class="modal-row"><label>Kategori</label><input type="text" id="inputMenuCategory" placeholder="Contoh: Kopi"></div>
+                    <div class="modal-row"><label>Harga Jual (Rp)</label><input type="number" id="inputMenuPrice" placeholder="Contoh: 25000"></div>
+                    <button class="btn-primary" onclick="saveMenu()" style="margin-top: 10px;">Simpan Menu Baru</button>
+                </div>
+                <div style="flex: 1.5; min-width: 300px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+                    <h4 style="margin-top:0; color:var(--primary-navy);">Atur Komposisi Resep Menu</h4>
+                    <div class="modal-row">
+                        <label>Pilih Menu</label>
+                        <select id="recipeMenuSelect"></select>
+                    </div>
+                    <div class="modal-row">
+                        <label>Pilih Bahan Baku</label>
+                        <select id="recipeMaterialSelect"></select>
+                    </div>
+                    <div class="modal-row">
+                        <label>Takaran per Porsi</label>
+                        <input type="number" id="recipeAmount" placeholder="Contoh: 18 (gram/ml/pcs)">
+                    </div>
+                    <button class="btn-secondary" onclick="addRecipeItem()" style="width:100%; margin-top:5px;">+ Tambahkan Bahan ke Resep Menu Ini</button>
+                    <div id="recipePreviewList" style="margin-top: 12px; font-size: 0.9em; max-height: 120px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            <h3>Daftar Menu Aktif</h3>
+            <table id="adminMenuListTable">
+                <thead><tr><th>Menu</th><th>Kategori</th><th>Harga</th><th>Resep Komposisi</th><th>Aksi</th></tr></thead>
+                <tbody id="adminMenuListTbody"></tbody>
+            </table>
+        </div>
     </div>
-  </div>
 
-  <!-- MODAL KONFIRMASI BARISTA MODERN -->
-  <div id="baristaConfirmModal" class="modal">
-    <div class="modal-content text-center" style="width: 380px;">
-      <div style="font-size: 2.5em; margin-bottom: 5px;">⚠️</div>
-      <h3 style="color: var(--primary-navy); margin-bottom: 5px;">Konfirmasi Status</h3>
-      <p id="baristaConfirmText" style="color: var(--text-muted); font-size: 0.95em; margin-bottom: 15px;">Ubah status pesanan?</p>
-      <div class="modal-actions">
-        <button class="btn-secondary" onclick="closeBaristaModal()">Batal</button>
-        <button class="btn-primary" id="btnConfirmBaristaYes" style="margin-top:0;">Ya, Lanjutkan</button>
-      </div>
+    <!-- TAB 5: ADMIN UPDATE STOK BAHAN BAKU -->
+    <div id="admin-stock-page" class="page-container" style="display: none; flex-direction: column; gap: 20px;">
+        <div class="card" style="width: 100%;">
+            <h2>📦 Manajemen & Restock Bahan Baku</h2>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <div class="modal-row"><label>Nama Bahan Baku</label><input type="text" id="inputMatName" placeholder="Contoh: Biji Kopi Arabika, Susu UHT"></div>
+                    <div class="modal-row"><label>Satuan</label><input type="text" id="inputMatUnit" placeholder="Contoh: gram, ml, pcs"></div>
+                    <div class="modal-row"><label>Stok Awal / Tambahan</label><input type="number" id="inputMatStock" placeholder="Contoh: 1000"></div>
+                    <button class="btn-primary" onclick="saveMaterial()" style="margin-top: 10px;">Tambah Bahan Baku Baru</button>
+                </div>
+                <div style="flex: 1.5; min-width: 300px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+                    <h4 style="margin-top:0; color:var(--primary-navy);">Restock / Tambah Stok Masuk</h4>
+                    <div class="modal-row">
+                        <label>Pilih Bahan Baku</label>
+                        <select id="restockMatSelect"></select>
+                    </div>
+                    <div class="modal-row">
+                        <label>Jumlah Masuk (+)</label>
+                        <input type="number" id="restockQty" placeholder="Contoh: 500">
+                    </div>
+                    <button class="btn-primary" onclick="processRestock()" style="width:100%; margin-top:5px; background:var(--success);">Update / Tambah Stok</button>
+                </div>
+            </div>
+            <h3>Daftar Inventaris Bahan Baku</h3>
+            <table id="adminMaterialListTable">
+                <thead><tr><th>Nama Bahan</th><th>Stok Saat Ini</th><th>Satuan</th><th>Aksi</th></tr></thead>
+                <tbody id="adminMaterialListTbody"></tbody>
+            </table>
+        </div>
     </div>
-  </div>
 
-  <!-- HALAMAN KASIR -->
-  <div id="kasir-page" class="page-container" style="display: none;">
-    <div class="card product-section" style="flex:2;">
-      <h2>☕ Katalog Menu Produk</h2>
-      <table id="productTable">
-        <thead><tr><th>Menu</th><th>Harga</th><th>Stok</th><th>Aksi</th></tr></thead>
-        <tbody></tbody>
-      </table>
+    <!-- HALAMAN BARISTA -->
+    <div id="barista-page" class="page-container" style="display: none; align-items: flex-start;">
+        <div class="card" style="width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>📋 Antrean Pesanan Barista</h2>
+                <button class="btn-secondary" onclick="loadBaristaOrders()">🔄 Segarkan Antrean</button>
+            </div>
+            <table id="baristaTable">
+                <thead><tr><th>Jam</th><th>No. Trx</th><th>Daftar Pesanan (Qty)</th><th>Status</th><th>Aksi Tahapan</th></tr></thead>
+                <tbody id="baristaTbody"></tbody>
+            </table>
+        </div>
     </div>
-    <div class="card cart-section" style="flex:1;">
-      <div>
-        <h2>🛒 Keranjang Belanja</h2>
-        <table id="cartTable">
-  <thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th>Aksi</th></tr></thead>
-  <tbody></tbody>
-</table>
-      </div>
-      <div>
-        <div class="total-box" id="totalText">Total: Rp 0</div>
-        <button class="btn-primary" onclick="openCheckoutModal()" style="padding: 14px; font-size: 1.05em;">Bayar Pesanan</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODAL PEMBAYARAN MODERN -->
-  <div id="paymentModal" class="modal">
-    <div class="modal-content" style="width: 420px;">
-      <h3 style="color: var(--primary-navy);">Konfirmasi Pembayaran</h3>
-      <div class="modal-row" style="margin-bottom: 8px;"><span>Total Belanja</span><strong id="modalTotal" style="font-size: 1.2em; color: var(--primary-navy);">Rp 0</strong></div>
-      <div class="modal-row"><label>Uang Tunai Konsumen</label><input type="number" id="cashInput" placeholder="Masukkan nominal uang" oninput="calculateChange()"></div>
-      <div class="quick-cash-container">
-        <button type="button" class="btn-cash" onclick="addCash(500)">500</button>
-        <button type="button" class="btn-cash" onclick="addCash(1000)">1rb</button>
-        <button type="button" class="btn-cash" onclick="addCash(2000)">2rb</button>
-        <button type="button" class="btn-cash" onclick="addCash(5000)">5rb</button>
-        <button type="button" class="btn-cash" onclick="addCash(10000)">10rb</button>
-        <button type="button" class="btn-cash" onclick="addCash(20000)">20rb</button>
-        <button type="button" class="btn-cash" onclick="addCash(50000)">50rb</button>
-        <button type="button" class="btn-cash" onclick="addCash(100000)">100rb</button>
-      </div>
-      <button type="button" class="btn-cash btn-reset" style="width:100%; margin-top: 4px;" onclick="resetCash()">Reset Nominal</button>
-      <div class="modal-row" style="margin-top: 5px;"><span>Kembalian</span><strong id="modalChange" style="font-size: 1.2em; color: var(--success);">Rp 0</strong></div>
-      <div class="modal-actions" style="margin-top: 5px;">
-        <button class="btn-secondary" onclick="closeCheckoutModal()">Batal</button>
-        <button class="btn-primary" id="btnProcess" onclick="processCheckout()" disabled>Selesaikan</button>
-      </div>
+    <!-- MODAL KONFIRMASI BARISTA -->
+    <div id="baristaConfirmModal" class="modal">
+        <div class="modal-content text-center" style="width: 380px;">
+            <div style="font-size: 2.5em; margin-bottom: 5px;">⚠️</div>
+            <h3 style="color: var(--primary-navy); margin-bottom: 5px;">Konfirmasi Status</h3>
+            <p id="baristaConfirmText" style="color: var(--text-muted); font-size: 0.95em; margin-bottom: 15px;">Ubah status pesanan?</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeBaristaModal()">Batal</button>
+                <button class="btn-primary" id="btnConfirmBaristaYes" style="margin-top:0;">Ya, Lanjutkan</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- MODAL STRUK BERHASIL MODERN -->
-  <div id="successModal" class="modal">
-    <div class="modal-content text-center" style="width: 380px;">
-      <div class="success-icon">✓</div>
-      <h3 style="color: var(--primary-navy);">Transaksi Berhasil!</h3>
-      <p id="successTrxId" style="color: var(--text-muted); font-size: 0.85em; font-weight: 600;"></p>
-      <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed var(--border-color);">
-        <span style="font-size: 0.75em; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Nomor Antrian</span>
-        <h2 id="resQueueNo" style="margin:4px 0 0 0; font-size: 26px; color: var(--primary-navy);">A-000</h2>
-      </div>
-      <table style="font-size: 0.85em;">
-        <thead><tr><th>Item</th><th>Qty</th><th style="text-align: right;">Subtotal</th></tr></thead>
-        <tbody id="resCartItems"></tbody>
-      </table>
-      <div style="text-align: left; font-size: 0.9em; background: #f8fafc; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;">
-        <div style="display: flex; justify-content: space-between;"><span>Total:</span> <strong id="resTotal"></strong></div>
-        <div style="display: flex; justify-content: space-between;"><span>Tunai:</span> <span id="resCash"></span></div>
-        <div style="display: flex; justify-content: space-between; color: var(--success);"><span>Kembalian:</span> <strong id="resChange"></strong></div>
-      </div>
-      <div class="modal-actions" style="flex-direction: column; gap: 8px; margin-top: 5px;">
-        <button class="btn-primary" onclick="window.print()" style="background: var(--success); color: white; margin-top:0;">🖨 Cetak Struk</button>
-        <button class="btn-secondary" onclick="closeSuccessModal()" style="width:100%; padding:10px;">Transaksi Baru</button>
-      </div>
+    <!-- HALAMAN KASIR -->
+    <div id="kasir-page" class="page-container" style="display: none;">
+        <div class="card product-section" style="flex:2;">
+            <h2>☕ Katalog Menu Produk</h2>
+            <table id="productTable">
+                <thead><tr><th>Menu</th><th>Harga</th><th>Stok Resep</th><th>Aksi</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="card cart-section" style="flex:1;">
+            <div>
+                <h2>🛒 Keranjang Belanja</h2>
+                <table id="cartTable">
+                    <thead><tr><th>Item</th><th>Qty</th><th>Subtotal</th><th>Aksi</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div>
+                <div class="total-box" id="totalText">Total: Rp 0</div>
+                <button class="btn-primary" onclick="openCheckoutModal()" style="padding: 14px; font-size: 1.05em;">Bayar Pesanan</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script src="script.js"></script>
+    <!-- MODAL PEMBAYARAN -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content" style="width: 420px;">
+            <h3 style="color: var(--primary-navy);">Konfirmasi Pembayaran</h3>
+            <div class="modal-row" style="margin-bottom: 8px;"><span>Total Belanja</span><strong id="modalTotal" style="font-size: 1.2em; color: var(--primary-navy);">Rp 0</strong></div>
+            <div class="modal-row"><label>Uang Tunai Konsumen</label><input type="number" id="cashInput" placeholder="Masukkan nominal uang" oninput="calculateChange()"></div>
+            <div class="quick-cash-container">
+                <button type="button" class="btn-cash" onclick="addCash(500)">500</button>
+                <button type="button" class="btn-cash" onclick="addCash(1000)">1rb</button>
+                <button type="button" class="btn-cash" onclick="addCash(2000)">2rb</button>
+                <button type="button" class="btn-cash" onclick="addCash(5000)">5rb</button>
+                <button type="button" class="btn-cash" onclick="addCash(10000)">10rb</button>
+                <button type="button" class="btn-cash" onclick="addCash(20000)">20rb</button>
+                <button type="button" class="btn-cash" onclick="addCash(50000)">50rb</button>
+                <button type="button" class="btn-cash" onclick="addCash(100000)">100rb</button>
+            </div>
+            <button type="button" class="btn-cash btn-reset" style="width:100%; margin-top: 4px;" onclick="resetCash()">Reset Nominal</button>
+            <div class="modal-row" style="margin-top: 5px;"><span>Kembalian</span><strong id="modalChange" style="font-size: 1.2em; color: var(--success);">Rp 0</strong></div>
+            <div class="modal-actions" style="margin-top: 5px;">
+                <button class="btn-secondary" onclick="closeCheckoutModal()">Batal</button>
+                <button class="btn-primary" id="btnProcess" onclick="processCheckout()" disabled>Selesaikan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL STRUK BERHASIL -->
+    <div id="successModal" class="modal">
+        <div class="modal-content text-center" style="width: 380px;">
+            <div class="success-icon">✓</div>
+            <h3 style="color: var(--primary-navy);">Transaksi Berhasil!</h3>
+            <p id="successTrxId" style="color: var(--text-muted); font-size: 0.85em; font-weight: 600;"></p>
+            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed var(--border-color);">
+                <span style="font-size: 0.75em; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Nomor Antrian</span>
+                <h2 id="resQueueNo" style="margin:4px 0 0 0; font-size: 26px; color: var(--primary-navy);">A-000</h2>
+            </div>
+            <table style="font-size: 0.85em;">
+                <thead><tr><th>Item</th><th>Qty</th><th style="text-align: right;">Subtotal</th></tr></thead>
+                <tbody id="resCartItems"></tbody>
+            </table>
+            <div style="text-align: left; font-size: 0.9em; background: #f8fafc; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between;"><span>Total:</span> <strong id="resTotal"></strong></div>
+                <div style="display: flex; justify-content: space-between;"><span>Tunai:</span> <span id="resCash"></span></div>
+                <div style="display: flex; justify-content: space-between; color: var(--success);"><span>Kembalian:</span> <strong id="resChange"></strong></div>
+            </div>
+            <div class="modal-actions" style="flex-direction: column; gap: 8px; margin-top: 5px;">
+                <button class="btn-primary" onclick="window.print()" style="background: var(--success); color: white; margin-top:0;">🖨 Cetak Struk</button>
+                <button class="btn-secondary" onclick="closeSuccessModal()" style="width:100%; padding:10px;">Transaksi Baru</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
