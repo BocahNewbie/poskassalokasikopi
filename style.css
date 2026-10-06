@@ -155,3 +155,12 @@ tr:hover td { background: #fdfdfd; }
     border-radius: 8px;
     border: 1px solid var(--border-color);
 }
+
+/* Styling tambahan untuk tabel manajemen user */
+#adminUsersTable code {
+    background: #f1f5f9;
+    padding: 3px 6px;
+    border-radius: 4px;
+    color: var(--primary-navy);
+    font-size: 0.9em;
+}
